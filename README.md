@@ -35,6 +35,10 @@ See `CLAUDE.md` for the full architecture, conventions, and route reference.
 - All API calls use `credentials: 'include'`
 - Path alias `@/` for `src/`
 
+## Hosting
+
+Production deploys to Cloudflare Pages from the `main` branch. The `staging` branch (when it exists) deploys to `staging.portal.panwarhealth.com.au`. Other branches get throwaway `*.pages.dev` preview URLs (UI-only — auth cookies don't reach `*.pages.dev`).
+
 ## Repo siblings
 
 - [`panwar_api`](../panwar_api) — C# backend
