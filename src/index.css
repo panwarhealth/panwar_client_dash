@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Per-client branding CSS variables. The auth bootstrap (App.tsx) reads
+ * /api/auth/me and overwrites these with the logged-in client's colours.
+ * Defaults are PH purple so the app still looks correct before /me loads.
+ *
+ * Stored as RGB triples (no #, no rgb()) so Tailwind's `<alpha-value>`
+ * placeholder can compose them with opacity, e.g. bg-client-primary/20.
+ */
+:root {
+  --client-primary: 112 47 143;   /* #702f8f — PH purple */
+  --client-accent: 180 30 140;    /* #B41E8C — PH dark pink */
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-white text-ph-charcoal;
+  }
+}
