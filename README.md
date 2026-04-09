@@ -37,7 +37,7 @@ See `CLAUDE.md` for the full architecture, conventions, and route reference.
 
 ## Hosting
 
-Production deploys to Cloudflare Pages from the `main` branch. The `staging` branch (when it exists) deploys to `staging.portal.panwarhealth.com.au`. Other branches get throwaway `*.pages.dev` preview URLs (UI-only — auth cookies don't reach `*.pages.dev`).
+Production deploys to **Cloudflare Pages** from the `main` branch to `portal.panwarhealth.com.au`. The `staging` branch (when it exists) deploys to `staging.portal.panwarhealth.com.au`. Other branches get throwaway `*.pages.dev` preview URLs (UI-only — auth cookies don't reach `*.pages.dev`).
 
 ## Repo siblings
 
