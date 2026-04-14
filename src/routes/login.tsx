@@ -8,7 +8,8 @@ import { AuthShell } from '@/components/AuthShell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { requestMagicLink } from '@/api/auth';
+import { requestMagicLink, resolveLoginMethod } from '@/api/auth';
+import { msalInstance, loginRequest } from '@/lib/msal';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -20,44 +21,43 @@ export const Route = createFileRoute('/login')({
 });
 
 function LoginPage() {
-  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [denied, setDenied] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: '' },
   });
 
-  const mutation = useMutation({
-    mutationFn: requestMagicLink,
-    onSuccess: (_, vars) => {
-      setSubmittedEmail(vars);
+  const submit = useMutation({
+    mutationFn: async (email: string) => {
+      const method = await resolveLoginMethod(email);
+      if (method === 'magic-link') {
+        await requestMagicLink(email);
+        return { outcome: 'magic-link-sent', email } as const;
+      }
+      if (method === 'entra') {
+        await msalInstance.initialize();
+        await msalInstance.loginRedirect(loginRequest);
+        return { outcome: 'entra-redirect' } as const;
+      }
+      return { outcome: 'denied' } as const;
+    },
+    onSuccess: (result) => {
+      if (result.outcome === 'magic-link-sent') setSentTo(result.email);
+      if (result.outcome === 'denied') setDenied(true);
     },
   });
 
-  if (submittedEmail) {
+  if (sentTo) {
     return (
-      <AuthShell>
-        <Card>
-          <CardHeader>
-            <CardTitle>Check your inbox</CardTitle>
-            <CardDescription>
-              We sent a sign-in link to <strong>{submittedEmail}</strong>. The link expires in
-              15 minutes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSubmittedEmail(null);
-                form.reset();
-              }}
-            >
-              Use a different email
-            </Button>
-          </CardContent>
-        </Card>
-      </AuthShell>
+      <MagicLinkSentCard
+        email={sentTo}
+        onReset={() => {
+          setSentTo(null);
+          form.reset();
+        }}
+      />
     );
   }
 
@@ -67,12 +67,16 @@ function LoginPage() {
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
           <CardDescription>
-            Enter your email address and we&rsquo;ll send you a sign-in link.
+            Enter your email to continue. Clients get an emailed sign-in link; staff
+            are taken to Microsoft sign-in.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={form.handleSubmit((values) => mutation.mutate(values.email))}
+            onSubmit={form.handleSubmit((values) => {
+              setDenied(false);
+              submit.mutate(values.email);
+            })}
             className="flex flex-col gap-4"
           >
             <div className="flex flex-col gap-1.5">
@@ -91,16 +95,42 @@ function LoginPage() {
               )}
             </div>
 
-            <Button type="submit" variant="ph" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Sending…' : 'Send sign-in link'}
+            <Button type="submit" variant="ph" disabled={submit.isPending}>
+              {submit.isPending ? 'Checking…' : 'Continue'}
             </Button>
 
-            {mutation.isError && (
+            {denied && (
+              <p className="text-xs text-red-600">
+                We couldn&rsquo;t find an account for that email. Contact Panwar Health
+                if you believe this is an error.
+              </p>
+            )}
+            {submit.isError && !denied && (
               <p className="text-xs text-red-600">
                 Something went wrong. Please try again in a moment.
               </p>
             )}
           </form>
+        </CardContent>
+      </Card>
+    </AuthShell>
+  );
+}
+
+function MagicLinkSentCard({ email, onReset }: { email: string; onReset: () => void }) {
+  return (
+    <AuthShell>
+      <Card>
+        <CardHeader>
+          <CardTitle>Check your inbox</CardTitle>
+          <CardDescription>
+            We sent a sign-in link to <strong>{email}</strong>. The link expires in 15 minutes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="ghost" onClick={onReset}>
+            Use a different email
+          </Button>
         </CardContent>
       </Card>
     </AuthShell>

@@ -1,18 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { ApiError } from '@/api/client';
 import { getMe, logout, type MeResponse } from '@/api/auth';
-import { hexToRgbString } from '@/lib/utils';
 
 const ME_QUERY_KEY = ['me'] as const;
 
 /**
- * Fetches the current user from /api/auth/me. Returns undefined while loading,
- * null when not signed in (401), or the MeResponse object on success.
- *
- * Side effect: when a `clientPrimaryColor` / `clientAccentColor` is present,
- * we paint them onto the document root as CSS variables so the per-client
- * Tailwind colours (bg-client-primary, etc.) take effect everywhere.
+ * Fetches the current user from /api/auth/me. Returns null when not signed in
+ * (401), or the MeResponse on success. Client-specific branding moves to
+ * per-client context (see hooks/useClientBranding) because a user can belong
+ * to multiple clients.
  */
 export function useAuth() {
   const query = useQuery<MeResponse | null, Error>({
@@ -25,20 +21,9 @@ export function useAuth() {
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
-
-  // Apply per-client branding to the document root whenever /me changes.
-  useEffect(() => {
-    const me = query.data;
-    if (!me) return;
-    const root = document.documentElement;
-    const primary = hexToRgbString(me.clientPrimaryColor);
-    const accent = hexToRgbString(me.clientAccentColor);
-    if (primary) root.style.setProperty('--client-primary', primary);
-    if (accent) root.style.setProperty('--client-accent', accent);
-  }, [query.data]);
 
   return {
     user: query.data ?? null,
@@ -49,13 +34,14 @@ export function useAuth() {
   };
 }
 
-/** Logout mutation that clears the cookie + invalidates the /me cache. */
+/** Logout clears the cookie + bounces to /login. */
 export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: logout,
     onSuccess: () => {
       queryClient.setQueryData(ME_QUERY_KEY, null);
+      window.location.href = '/login';
     },
   });
 }

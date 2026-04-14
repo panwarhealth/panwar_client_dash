@@ -66,10 +66,11 @@ export interface DashboardPlacement {
 }
 
 export async function getDashboard(
+  clientSlug: string,
   brandSlug: string,
   audienceSlug: string,
 ): Promise<DashboardResponse> {
   return apiFetch<DashboardResponse>(
-    `/dashboards/${encodeURIComponent(brandSlug)}/${encodeURIComponent(audienceSlug)}`,
+    `/dashboards/${encodeURIComponent(clientSlug)}/${encodeURIComponent(brandSlug)}/${encodeURIComponent(audienceSlug)}`,
   );
 }
