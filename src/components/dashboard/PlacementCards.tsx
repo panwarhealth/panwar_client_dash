@@ -64,8 +64,7 @@ function Chip({ label, value }: { label: string; value: string }) {
 function PlacementCard({ p }: { p: DashboardPlacement }) {
   const impressions = p.totals['impressions'] ?? 0;
   const clicks = p.totals['clicks'] ?? 0;
-  // Storable metrics this placement actually reported, in a stable order.
-  const metricKeys = Object.keys(p.totals).sort();
+  const metricKeys = p.metricKeys.filter((k) => k in p.totals || k in p.targets);
 
   return (
     <Card>

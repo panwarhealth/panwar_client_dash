@@ -3,9 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getClientBrands } from '@/api/clients';
 
 /**
- * Brand overview. Jumps straight to the brand's first available audience (the
- * ones with placements) so the user never lands on an empty page. Only renders
- * its own body when the brand has no populated audiences yet.
+ * Brand overview. For brands with exactly one populated audience, redirects
+ * straight to it (no point landing on an empty picker). For brands with multiple
+ * audiences, shows a picker. For brands with no populated audiences, shows the
+ * empty state.
  */
 export const Route = createFileRoute('/dashboard/$clientSlug/$brandSlug/')({
   beforeLoad: async ({ context, params }) => {
@@ -15,14 +16,15 @@ export const Route = createFileRoute('/dashboard/$clientSlug/$brandSlug/')({
       staleTime: 60 * 1000,
     });
     const brand = data.brands.find((b) => b.slug === params.brandSlug);
-    const firstAudienceSlug = brand?.audienceSlugs[0];
-    if (firstAudienceSlug) {
+    // Only auto-redirect when there is exactly one audience — preserves this
+    // page as a real picker when there are multiple.
+    if (brand?.audienceSlugs.length === 1) {
       throw redirect({
         to: '/dashboard/$clientSlug/$brandSlug/$audienceSlug',
         params: {
           clientSlug: params.clientSlug,
           brandSlug: params.brandSlug,
-          audienceSlug: firstAudienceSlug,
+          audienceSlug: brand.audienceSlugs[0],
         },
       });
     }
@@ -39,6 +41,8 @@ function BrandOverview() {
   });
 
   const brand = data?.brands.find((b) => b.slug === brandSlug);
+  const availableAudiences =
+    data?.audiences.filter((a) => brand?.audienceSlugs.includes(a.slug)) ?? [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,9 +56,26 @@ function BrandOverview() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-ph-charcoal">{brand?.name ?? brandSlug}</h1>
       </div>
-      <div className="rounded-lg border border-dashed border-ph-charcoal/15 p-8 text-center text-sm text-ph-charcoal/60">
-        No dashboards are available for this brand yet.
-      </div>
+
+      {availableAudiences.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {availableAudiences.map((a) => (
+            <Link
+              key={a.slug}
+              to="/dashboard/$clientSlug/$brandSlug/$audienceSlug"
+              params={{ clientSlug, brandSlug, audienceSlug: a.slug }}
+              className="rounded-lg border border-ph-charcoal/10 p-5 transition-colors hover:border-client-primary"
+            >
+              <div className="text-sm font-semibold text-ph-charcoal">{a.name}</div>
+              <div className="mt-1 text-xs text-ph-charcoal/50">View performance dashboard</div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-ph-charcoal/15 p-8 text-center text-sm text-ph-charcoal/60">
+          No dashboards are available for this brand yet.
+        </div>
+      )}
     </div>
   );
 }

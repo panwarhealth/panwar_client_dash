@@ -99,8 +99,9 @@ export function monthsBetween(from: string, to: string): YearMonth[] {
 export interface PeriodPreset { label: string; from: string; to: string }
 
 /**
- * Build the preset list bounded to the available data span. Always includes the
- * full span ("All"), each calendar year and each individual month in range.
+ * Build the year preset list bounded to the available data span: the full span
+ * ("All time") plus one entry per calendar year (clamped to its in-data months).
+ * Individual months are reached via the filter's Custom range, not presets.
  */
 export function periodPresets(availableFrom: string, availableTo: string): PeriodPreset[] {
   const months = monthsBetween(availableFrom, availableTo);
@@ -113,9 +114,6 @@ export function periodPresets(availableFrom: string, availableTo: string): Perio
       from: toYm(inYear[0]),
       to: toYm(inYear[inYear.length - 1]),
     });
-  }
-  for (const m of months) {
-    presets.push({ label: `${MONTH_LABELS[m.month - 1]} ${m.year}`, from: toYm(m), to: toYm(m) });
   }
   return presets;
 }

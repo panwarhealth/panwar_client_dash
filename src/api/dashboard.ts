@@ -80,6 +80,8 @@ export interface DashboardPlacement {
   cpdInvestmentCost: number | null;
   artworkViewUrl: string | null;
   liveMonths: number[];
+  /** Storable metric keys in template SortOrder — use to drive display order. */
+  metricKeys: string[];
   totals: Record<string, number>;
   targets: Record<string, number>;
 }

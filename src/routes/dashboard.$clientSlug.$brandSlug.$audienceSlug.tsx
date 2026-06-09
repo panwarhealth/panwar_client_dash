@@ -49,13 +49,23 @@ function BrandAudienceDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link
-          to="/dashboard/$clientSlug/$brandSlug"
-          params={{ clientSlug, brandSlug }}
-          className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
-        >
-          ← Brand overview
-        </Link>
+        {availableAudiences.length > 1 ? (
+          <Link
+            to="/dashboard/$clientSlug/$brandSlug"
+            params={{ clientSlug, brandSlug }}
+            className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
+          >
+            ← Brand overview
+          </Link>
+        ) : (
+          <Link
+            to="/dashboard/$clientSlug"
+            params={{ clientSlug }}
+            className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
+          >
+            ← All brands
+          </Link>
+        )}
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold text-ph-charcoal">
             {dashboard.data

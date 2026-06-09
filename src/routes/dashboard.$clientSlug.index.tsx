@@ -7,6 +7,7 @@ import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
 import { getMyClients } from '@/api/clients';
 import { getClientSummary, type SummaryRow } from '@/api/summary';
+import { getEducationPages, type EducationPageSummary } from '@/api/education';
 import {
   TOUCHPOINT_KEYS,
   ENGAGEMENT_KEYS,
@@ -55,6 +56,12 @@ function ClientOverviewPage() {
   });
   const showBackLink = myClients.length > 1;
 
+  const { data: eduPages = [] } = useQuery({
+    queryKey: ['education', 'pages', clientSlug],
+    queryFn: () => getEducationPages(clientSlug),
+    staleTime: 30 * 1000,
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -85,6 +92,7 @@ function ClientOverviewPage() {
         <div className="flex flex-col gap-6">
           <SummaryBanner totals={summary.data.totals} />
           <BrandAudienceRollup clientSlug={clientSlug} rows={summary.data.byBrandAudience} />
+          {eduPages.length > 0 && <EducationLinks clientSlug={clientSlug} pages={eduPages} />}
           <PublisherCostSummary rows={summary.data.byPublisher} />
         </div>
       )}
@@ -128,6 +136,34 @@ function BrandAudienceRollup({ clientSlug, rows }: { clientSlug: string; rows: S
               </Link>
             );
           })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EducationLinks({ clientSlug, pages }: { clientSlug: string; pages: EducationPageSummary[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Education</CardTitle>
+        <CardDescription>CPD and module completion dashboards.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {pages.map((p) => (
+            <Link
+              key={p.id}
+              to="/dashboard/$clientSlug/education/$pageSlug"
+              params={{ clientSlug, pageSlug: p.slug }}
+              className="rounded-lg border border-ph-charcoal/10 p-4 transition-colors hover:border-client-primary"
+            >
+              <div className="text-sm font-semibold text-ph-charcoal">{p.name}</div>
+              <div className="mt-1 text-xs text-ph-charcoal/50">
+                {p.chartCount} {p.chartCount === 1 ? 'chart' : 'charts'}
+              </div>
+            </Link>
+          ))}
         </div>
       </CardContent>
     </Card>
