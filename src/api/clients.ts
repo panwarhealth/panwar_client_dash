@@ -13,6 +13,8 @@ export interface BrandSummary {
   id: string;
   name: string;
   slug: string;
+  /** Slugs of audiences with placements for this brand, ordered by audience name. */
+  audienceSlugs: string[];
 }
 
 export interface AudienceSummary {

@@ -38,3 +38,84 @@ export function formatTemplateCode(code: string): string {
     default: return code;
   }
 }
+
+/** Title-case a raw metric key, e.g. "page_views" -> "Page Views". */
+export function formatMetricKey(key: string): string {
+  if (key.toLowerCase() === 'ctr') return 'CTR';
+  return key
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+export function formatNumber(value: number): string {
+  return Math.round(value).toLocaleString('en-AU');
+}
+
+export function formatPercent(value: number, digits = 0): string {
+  return `${(value * 100).toLocaleString('en-AU', { maximumFractionDigits: digits })}%`;
+}
+
+// ── Derived metrics (the API returns raw fields; we compute the rest) ────────
+const ratio = (num: number, den: number): number => (den > 0 ? num / den : 0);
+
+export const pctOfTarget = (actual: number, target: number): number => ratio(actual, target);
+export const ctr = (clicks: number, impressions: number): number => ratio(clicks, impressions);
+export const cpm = (cost: number, impressions: number): number => ratio(cost, impressions / 1000);
+export const cpc = (cost: number, clicks: number): number => ratio(cost, clicks);
+export const engagementRate = (engagements: number, touchpoints: number): number => ratio(engagements, touchpoints);
+export const costPer = (cost: number, count: number): number => ratio(cost, count);
+
+// ── Period helpers (month granularity, "YYYY-MM") ───────────────────────────
+export interface YearMonth { year: number; month: number }
+
+export function parseYm(ym: string): YearMonth {
+  const [y, m] = ym.split('-').map(Number);
+  return { year: y, month: m };
+}
+export const toYm = ({ year, month }: YearMonth): string =>
+  `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
+const ord = ({ year, month }: YearMonth): number => year * 12 + (month - 1);
+
+/** A human label for a from→to window, e.g. "Jan – Dec 2025" or "Mar 2025". */
+export function formatRange(from: string, to: string): string {
+  const a = parseYm(from);
+  const b = parseYm(to);
+  const lbl = (ym: YearMonth) => `${MONTH_LABELS[ym.month - 1]} ${ym.year}`;
+  if (a.year === b.year && a.month === b.month) return lbl(a);
+  if (a.year === b.year) return `${MONTH_LABELS[a.month - 1]} – ${MONTH_LABELS[b.month - 1]} ${a.year}`;
+  return `${lbl(a)} – ${lbl(b)}`;
+}
+
+/** Inclusive list of months between two "YYYY-MM" bounds. */
+export function monthsBetween(from: string, to: string): YearMonth[] {
+  const out: YearMonth[] = [];
+  for (let o = ord(parseYm(from)); o <= ord(parseYm(to)); o++) {
+    out.push({ year: Math.floor(o / 12), month: (o % 12) + 1 });
+  }
+  return out;
+}
+
+export interface PeriodPreset { label: string; from: string; to: string }
+
+/**
+ * Build the preset list bounded to the available data span. Always includes the
+ * full span ("All"), each calendar year and each individual month in range.
+ */
+export function periodPresets(availableFrom: string, availableTo: string): PeriodPreset[] {
+  const months = monthsBetween(availableFrom, availableTo);
+  const years = [...new Set(months.map((m) => m.year))];
+  const presets: PeriodPreset[] = [{ label: 'All time', from: availableFrom, to: availableTo }];
+  for (const y of years) {
+    const inYear = months.filter((m) => m.year === y);
+    presets.push({
+      label: String(y),
+      from: toYm(inYear[0]),
+      to: toYm(inYear[inYear.length - 1]),
+    });
+  }
+  for (const m of months) {
+    presets.push({ label: `${MONTH_LABELS[m.month - 1]} ${m.year}`, from: toYm(m), to: toYm(m) });
+  }
+  return presets;
+}

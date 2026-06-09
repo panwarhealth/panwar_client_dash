@@ -67,8 +67,7 @@ function LoginPage() {
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
           <CardDescription>
-            Enter your email to continue. Clients get an emailed sign-in link; staff
-            are taken to Microsoft sign-in.
+            Enter your email below. We&rsquo;ll email you a secure link to&nbsp;sign&nbsp;in.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -10,12 +10,18 @@ import type { DashboardMonth } from '@/api/dashboard';
 export function MonthlyChart({ monthly }: { monthly: DashboardMonth[] }) {
   const primaryColor = useClientPrimaryColor();
 
+  const multiYear = useMemo(
+    () => new Set(monthly.map((m) => m.year)).size > 1,
+    [monthly],
+  );
   const chartData = useMemo(
     () => monthly.map((m) => ({
-      month: MONTH_LABELS[m.month - 1] ?? String(m.month),
+      month: multiYear
+        ? `${MONTH_LABELS[m.month - 1] ?? m.month} '${String(m.year).slice(2)}`
+        : (MONTH_LABELS[m.month - 1] ?? String(m.month)),
       touchpoints: sumKeys(m.metrics, TOUCHPOINT_KEYS),
     })),
-    [monthly],
+    [monthly, multiYear],
   );
 
   return (
