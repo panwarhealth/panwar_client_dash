@@ -2,6 +2,11 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { getClientBrands } from '@/api/clients';
 
+interface PeriodSearch {
+  from?: string;
+  to?: string;
+}
+
 /**
  * Brand overview. For brands with exactly one populated audience, redirects
  * straight to it (no point landing on an empty picker). For brands with multiple
@@ -9,7 +14,11 @@ import { getClientBrands } from '@/api/clients';
  * empty state.
  */
 export const Route = createFileRoute('/dashboard/$clientSlug/$brandSlug/')({
-  beforeLoad: async ({ context, params }) => {
+  validateSearch: (search: Record<string, unknown>): PeriodSearch => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+    to: typeof search.to === 'string' ? search.to : undefined,
+  }),
+  beforeLoad: async ({ context, params, search }) => {
     const data = await context.queryClient.fetchQuery({
       queryKey: ['client', params.clientSlug],
       queryFn: () => getClientBrands(params.clientSlug),
@@ -26,6 +35,7 @@ export const Route = createFileRoute('/dashboard/$clientSlug/$brandSlug/')({
           brandSlug: params.brandSlug,
           audienceSlug: brand.audienceSlugs[0],
         },
+        search,
       });
     }
   },
@@ -34,6 +44,7 @@ export const Route = createFileRoute('/dashboard/$clientSlug/$brandSlug/')({
 
 function BrandOverview() {
   const { clientSlug, brandSlug } = Route.useParams();
+  const { from, to } = Route.useSearch();
   const { data } = useQuery({
     queryKey: ['client', clientSlug],
     queryFn: () => getClientBrands(clientSlug),
@@ -50,6 +61,7 @@ function BrandOverview() {
         <Link
           to="/dashboard/$clientSlug"
           params={{ clientSlug }}
+          search={{ from, to }}
           className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
         >
           ← All brands
@@ -64,6 +76,7 @@ function BrandOverview() {
               key={a.slug}
               to="/dashboard/$clientSlug/$brandSlug/$audienceSlug"
               params={{ clientSlug, brandSlug, audienceSlug: a.slug }}
+              search={{ from, to }}
               className="rounded-lg border border-ph-charcoal/10 p-5 transition-colors hover:border-client-primary"
             >
               <div className="text-sm font-semibold text-ph-charcoal">{a.name}</div>

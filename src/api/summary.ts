@@ -8,6 +8,10 @@ export interface ClientSummary {
   totals: DashboardTotals;
   byBrandAudience: SummaryRow[];
   byPublisher: SummaryRow[];
+  /** True when the window has no actuals - the dashboard shows a plan, not results. */
+  isPlan: boolean;
+  /** Analyst-written summary for the window's end year; null when none exists. */
+  summary: { year: number; text: string } | null;
 }
 
 export interface SummaryRow {

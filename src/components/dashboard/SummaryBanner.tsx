@@ -56,13 +56,45 @@ function Tile({
   );
 }
 
-export function SummaryBanner({ totals }: { totals: DashboardTotals }) {
+export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTotals; isPlan?: boolean }) {
   const touchpoints = sumKeys(totals.metrics, TOUCHPOINT_KEYS);
   const touchpointsTarget = sumKeys(totals.targetMetrics, TOUCHPOINT_KEYS);
   const engagements = sumKeys(totals.metrics, ENGAGEMENT_KEYS);
   const engagementsTarget = sumKeys(totals.targetMetrics, ENGAGEMENT_KEYS);
   const spend = totals.mediaCost + totals.cpdInvestmentCost;
   const planned = totals.plannedMediaCost;
+
+  if (isPlan) {
+    // Nothing has run yet - the headline numbers are the plan itself: KPI
+    // targets and planned spend, with projected cost-per rates.
+    const planSpend = planned ?? spend;
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Tile label="Target Touchpoints" value={formatNumber(touchpointsTarget)} sub="planned KPI" />
+        <Tile label="Target Engagements" value={formatNumber(engagementsTarget)} sub="planned KPI" />
+        <Tile
+          label="Target Engagement Rate"
+          value={formatPercent(engagementRate(engagementsTarget, touchpointsTarget), 2)}
+          sub="target engagements ÷ target touchpoints"
+        />
+        <Tile
+          label="Planned Spend"
+          value={formatCurrency(planSpend)}
+          sub={spend > 0 && planned != null ? `${formatCurrency(spend)} booked so far` : 'media + CPD budget'}
+        />
+        <Tile
+          label="Projected Cost per Touchpoint"
+          value={formatCurrency(costPer(planSpend, touchpointsTarget / 1000))}
+          sub="per 1,000 target touchpoints"
+        />
+        <Tile
+          label="Projected Cost per Engagement"
+          value={formatCurrency(costPer(planSpend, engagementsTarget))}
+          sub="per target engagement"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

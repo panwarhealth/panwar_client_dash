@@ -53,6 +53,7 @@ function BrandAudienceDashboard() {
           <Link
             to="/dashboard/$clientSlug/$brandSlug"
             params={{ clientSlug, brandSlug }}
+            search={{ from, to }}
             className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
           >
             ← Brand overview
@@ -61,16 +62,22 @@ function BrandAudienceDashboard() {
           <Link
             to="/dashboard/$clientSlug"
             params={{ clientSlug }}
+            search={{ from, to }}
             className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
           >
             ← All brands
           </Link>
         )}
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-ph-charcoal">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-ph-charcoal">
             {dashboard.data
               ? `${dashboard.data.brand.name} · ${dashboard.data.audience.name}`
               : 'Loading…'}
+            {dashboard.data?.isPlan && (
+              <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700">
+                Plan
+              </span>
+            )}
           </h1>
           {dashboard.data && (
             <PeriodFilter
@@ -87,6 +94,7 @@ function BrandAudienceDashboard() {
           brandSlug={brandSlug}
           audiences={availableAudiences}
           activeAudienceSlug={audienceSlug}
+          period={{ from, to }}
         />
       )}
 
@@ -96,10 +104,10 @@ function BrandAudienceDashboard() {
       )}
       {dashboard.data && (
         <div className="flex flex-col gap-6">
-          <SummaryBanner totals={dashboard.data.totals} />
-          <MonthlyChart monthly={dashboard.data.monthly} />
+          <SummaryBanner totals={dashboard.data.totals} isPlan={dashboard.data.isPlan} />
+          {!dashboard.data.isPlan && <MonthlyChart monthly={dashboard.data.monthly} />}
           <PublisherTable publishers={dashboard.data.publishers} />
-          <PlacementCards placements={dashboard.data.placements} />
+          <PlacementCards placements={dashboard.data.placements} isPlan={dashboard.data.isPlan} />
         </div>
       )}
     </div>

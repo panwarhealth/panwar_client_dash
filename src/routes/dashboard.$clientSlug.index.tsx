@@ -41,6 +41,7 @@ function ClientOverviewPage() {
   const { clientSlug } = Route.useParams();
   const { from, to } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const period = { from, to };
 
   const summary = useQuery({
     queryKey: ['summary', clientSlug, from ?? '', to ?? ''],
@@ -74,8 +75,9 @@ function ClientOverviewPage() {
           </Link>
         )}
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-ph-charcoal">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold text-ph-charcoal">
             {summary.data?.client.name ?? 'Loading…'}
+            {summary.data?.isPlan && <PlanBadge />}
           </h1>
           {summary.data && (
             <PeriodFilter
@@ -90,9 +92,14 @@ function ClientOverviewPage() {
       {summary.error && <DashboardError error={summary.error} onRetry={() => summary.refetch()} />}
       {summary.data && (
         <div className="flex flex-col gap-6">
-          <SummaryBanner totals={summary.data.totals} />
-          <BrandAudienceRollup clientSlug={clientSlug} rows={summary.data.byBrandAudience} />
-          {eduPages.length > 0 && <EducationLinks clientSlug={clientSlug} pages={eduPages} />}
+          <SummaryBanner totals={summary.data.totals} isPlan={summary.data.isPlan} />
+          {summary.data.summary && (
+            <YearSummaryCard summary={summary.data.summary} isPlan={summary.data.isPlan} />
+          )}
+          <BrandAudienceRollup clientSlug={clientSlug} rows={summary.data.byBrandAudience} period={period} />
+          {eduPages.length > 0 && (
+            <EducationLinks clientSlug={clientSlug} pages={eduPages} period={period} />
+          )}
           <PublisherCostSummary rows={summary.data.byPublisher} />
         </div>
       )}
@@ -100,7 +107,46 @@ function ClientOverviewPage() {
   );
 }
 
-function BrandAudienceRollup({ clientSlug, rows }: { clientSlug: string; rows: SummaryRow[] }) {
+function PlanBadge() {
+  return (
+    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700">
+      Plan
+    </span>
+  );
+}
+
+function YearSummaryCard({
+  summary,
+  isPlan,
+}: {
+  summary: { year: number; text: string };
+  isPlan: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {isPlan ? `FY${summary.year} plan notes` : `FY${summary.year} results summary`}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-ph-charcoal/80">
+          {summary.text}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BrandAudienceRollup({
+  clientSlug,
+  rows,
+  period,
+}: {
+  clientSlug: string;
+  rows: SummaryRow[];
+  period: PeriodSearch;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -120,6 +166,7 @@ function BrandAudienceRollup({ clientSlug, rows }: { clientSlug: string; rows: S
                 key={r.label}
                 to="/dashboard/$clientSlug/$brandSlug/$audienceSlug"
                 params={{ clientSlug, brandSlug: r.brandSlug!, audienceSlug: r.audienceSlug! }}
+                search={period}
                 className="rounded-lg border border-ph-charcoal/10 p-4 transition-colors hover:border-client-primary"
               >
                 <div className="text-sm font-semibold text-ph-charcoal">{r.label}</div>
@@ -142,7 +189,15 @@ function BrandAudienceRollup({ clientSlug, rows }: { clientSlug: string; rows: S
   );
 }
 
-function EducationLinks({ clientSlug, pages }: { clientSlug: string; pages: EducationPageSummary[] }) {
+function EducationLinks({
+  clientSlug,
+  pages,
+  period,
+}: {
+  clientSlug: string;
+  pages: EducationPageSummary[];
+  period: PeriodSearch;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -156,6 +211,7 @@ function EducationLinks({ clientSlug, pages }: { clientSlug: string; pages: Educ
               key={p.id}
               to="/dashboard/$clientSlug/education/$pageSlug"
               params={{ clientSlug, pageSlug: p.slug }}
+              search={period}
               className="rounded-lg border border-ph-charcoal/10 p-4 transition-colors hover:border-client-primary"
             >
               <div className="text-sm font-semibold text-ph-charcoal">{p.name}</div>

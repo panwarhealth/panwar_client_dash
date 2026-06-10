@@ -71,8 +71,13 @@ export function DashboardShell() {
       </main>
 
       <footer className="border-t border-ph-charcoal/10 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-4 text-xs text-ph-charcoal/50">
-          Powered by <span className="font-medium text-ph-purple">Panwar Health</span>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 text-xs text-ph-charcoal/50">
+          <span>
+            Powered by <span className="font-medium text-ph-purple">Panwar Health</span>
+          </span>
+          <Link to="/dashboard/definitions" className="hover:text-client-primary">
+            Definitions
+          </Link>
         </div>
       </footer>
     </div>

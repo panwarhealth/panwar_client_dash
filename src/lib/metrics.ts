@@ -1,5 +1,10 @@
-export const TOUCHPOINT_KEYS = ['impressions', 'views', 'page_views'] as const;
-export const ENGAGEMENT_KEYS = ['clicks', 'opens', 'completions', 'downloads'] as const;
+// Per the workbook's definitions sheet: touchpoints = print + digital
+// impressions, where eDM opens count as digital impressions; engagements =
+// clicks / completions / downloads (further actions). Unique variants
+// (unique_opens, unique_clicks, …) are per-placement detail only — rolling
+// them up would double-count.
+export const TOUCHPOINT_KEYS = ['impressions', 'views', 'page_views', 'opens'] as const;
+export const ENGAGEMENT_KEYS = ['clicks', 'completions', 'downloads'] as const;
 
 export const MONTH_LABELS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -33,10 +38,40 @@ export function formatTemplateCode(code: string): string {
     case 'edm': return 'eDM';
     case 'print': return 'Print';
     case 'sponsored_content': return 'Sponsored';
-    case 'education_video': return 'Edu video';
-    case 'education_course': return 'Edu course';
+    case 'education': return 'Education';
     default: return code;
   }
+}
+
+const SUBCATEGORY_LABELS: Record<string, string> = {
+  solus: 'Solus',
+  sponsored_content: 'Sponsored content',
+  banner: 'Banner',
+  module: 'Module',
+  article: 'Article',
+  podcast_webinar: 'Podcast / Webinar',
+  clinical_audit: 'Clinical audit',
+  research_paper: 'Research paper',
+  quiz: 'Quiz',
+};
+
+/** Sub-category snake_case → label, e.g. "podcast_webinar" -> "Podcast / Webinar". */
+export function formatSubcategory(value: string): string {
+  return SUBCATEGORY_LABELS[value] ?? value;
+}
+
+/** "2025-03-05" → "5 Mar". */
+export function formatSendDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return `${d} ${MONTH_LABELS[m - 1]}`;
+}
+
+/** "2025-03-01" → "Mar 2025". */
+export function formatMonthYear(iso: string): string {
+  const [y, m] = iso.split('-').map(Number);
+  if (!y || !m) return iso;
+  return `${MONTH_LABELS[m - 1]} ${y}`;
 }
 
 /** Title-case a raw metric key, e.g. "page_views" -> "Page Views". */

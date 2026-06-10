@@ -3,12 +3,21 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getEducationPages } from '@/api/education';
 
+interface PeriodSearch {
+  from?: string;
+  to?: string;
+}
+
 /**
  * Education landing for a client. One page → jump straight in. Multiple → show a
  * picker. None → empty state.
  */
 export const Route = createFileRoute('/dashboard/$clientSlug/education/')({
-  beforeLoad: async ({ context, params }) => {
+  validateSearch: (search: Record<string, unknown>): PeriodSearch => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+    to: typeof search.to === 'string' ? search.to : undefined,
+  }),
+  beforeLoad: async ({ context, params, search }) => {
     const pages = await context.queryClient.fetchQuery({
       queryKey: ['education', 'pages', params.clientSlug],
       queryFn: () => getEducationPages(params.clientSlug),
@@ -18,6 +27,7 @@ export const Route = createFileRoute('/dashboard/$clientSlug/education/')({
       throw redirect({
         to: '/dashboard/$clientSlug/education/$pageSlug',
         params: { clientSlug: params.clientSlug, pageSlug: pages[0].slug },
+        search,
       });
     }
   },
@@ -26,6 +36,7 @@ export const Route = createFileRoute('/dashboard/$clientSlug/education/')({
 
 function EducationIndex() {
   const { clientSlug } = Route.useParams();
+  const { from, to } = Route.useSearch();
   const { data: pages = [] } = useQuery({
     queryKey: ['education', 'pages', clientSlug],
     queryFn: () => getEducationPages(clientSlug),
@@ -38,6 +49,7 @@ function EducationIndex() {
         <Link
           to="/dashboard/$clientSlug"
           params={{ clientSlug }}
+          search={{ from, to }}
           className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
         >
           ← Overview
@@ -56,6 +68,7 @@ function EducationIndex() {
               key={p.id}
               to="/dashboard/$clientSlug/education/$pageSlug"
               params={{ clientSlug, pageSlug: p.slug }}
+              search={{ from, to }}
             >
               <Card className="transition-colors hover:border-client-primary">
                 <CardHeader>

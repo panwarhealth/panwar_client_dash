@@ -17,6 +17,8 @@ export interface DashboardResponse {
   monthly: DashboardMonth[];
   publishers: DashboardPublisher[];
   placements: DashboardPlacement[];
+  /** True when the window has no actuals - the dashboard shows a plan, not results. */
+  isPlan: boolean;
 }
 
 export interface DashboardBrand {
@@ -80,6 +82,14 @@ export interface DashboardPlacement {
   cpdInvestmentCost: number | null;
   artworkViewUrl: string | null;
   liveMonths: number[];
+  /** eDM send date / education range start ("YYYY-MM-DD"); null for live-month placements. */
+  startDate: string | null;
+  /** Education range end ("YYYY-MM-DD"); null otherwise. */
+  endDate: string | null;
+  /** eDM or education sub-category (snake_case); null when not applicable. */
+  subcategory: string | null;
+  /** In-window send dates for a merged eDM group ("YYYY-MM-DD"), sorted; empty otherwise. */
+  sendDates: string[];
   /** Storable metric keys in template SortOrder — use to drive display order. */
   metricKeys: string[];
   totals: Record<string, number>;

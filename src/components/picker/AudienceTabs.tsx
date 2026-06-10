@@ -7,11 +7,13 @@ export function AudienceTabs({
   brandSlug,
   audiences,
   activeAudienceSlug,
+  period,
 }: {
   clientSlug: string;
   brandSlug: string;
   audiences: AudienceSummary[];
   activeAudienceSlug?: string;
+  period: { from?: string; to?: string };
 }) {
   if (audiences.length === 0) return null;
   return (
@@ -23,6 +25,7 @@ export function AudienceTabs({
             key={a.id}
             to="/dashboard/$clientSlug/$brandSlug/$audienceSlug"
             params={{ clientSlug, brandSlug, audienceSlug: a.slug }}
+            search={period}
             className={cn(
               'rounded-md px-4 py-2 text-sm font-medium transition-colors',
               active
