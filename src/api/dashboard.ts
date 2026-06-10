@@ -107,6 +107,6 @@ export async function getDashboard(
   if (period?.to) qs.set('to', period.to);
   const suffix = qs.toString() ? `?${qs}` : '';
   return apiFetch<DashboardResponse>(
-    `/dashboards/${encodeURIComponent(clientSlug)}/${encodeURIComponent(brandSlug)}/${encodeURIComponent(audienceSlug)}${suffix}`,
+    `/dashboards/${encodeURIComponent(clientSlug)}/brands/${encodeURIComponent(brandSlug)}/${encodeURIComponent(audienceSlug)}${suffix}`,
   );
 }

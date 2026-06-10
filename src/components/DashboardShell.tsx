@@ -75,9 +75,6 @@ export function DashboardShell() {
           <span>
             Powered by <span className="font-medium text-ph-purple">Panwar Health</span>
           </span>
-          <Link to="/dashboard/definitions" className="hover:text-client-primary">
-            Definitions
-          </Link>
         </div>
       </footer>
     </div>

@@ -41,10 +41,30 @@ export interface EducationChart {
   annotations: EducationAnnotation[];
 }
 
+export interface EducationAssetStatus {
+  status: string;
+  points: EducationPoint[];
+  total: number;
+}
+
+/** One row of the page's detail table (the workbook's per-asset education table). */
+export interface EducationAsset {
+  id: string;
+  groupLabel: string;
+  brand: string | null;
+  type: string | null;
+  title: string;
+  author: string | null;
+  expiry: string | null;
+  sortOrder: number;
+  statuses: EducationAssetStatus[];
+}
+
 export interface EducationPageResponse {
   page: EducationPageSummary;
   period: DashboardPeriod;
   charts: EducationChart[];
+  assets: EducationAsset[];
 }
 
 export async function getEducationPages(clientSlug: string): Promise<EducationPageSummary[]> {

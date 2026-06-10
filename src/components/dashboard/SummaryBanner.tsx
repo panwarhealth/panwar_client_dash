@@ -1,3 +1,5 @@
+import { Link } from '@tanstack/react-router';
+import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   TOUCHPOINT_KEYS,
@@ -29,6 +31,20 @@ function AttainmentBar({ pct }: { pct: number }) {
       <span className="mt-1 block text-xs font-medium text-ph-charcoal/60">
         {formatPercent(pct)} of KPI
       </span>
+    </div>
+  );
+}
+
+function DefinitionsLink() {
+  return (
+    <div className="flex justify-end">
+      <Link
+        to="/dashboard/definitions"
+        className="flex items-center gap-1.5 text-sm text-ph-charcoal/80 hover:text-client-primary"
+      >
+        <BookOpen className="h-4 w-4" />
+        What do these numbers mean? View definitions
+      </Link>
     </div>
   );
 }
@@ -69,7 +85,8 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
     // targets and planned spend, with projected cost-per rates.
     const planSpend = planned ?? spend;
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Tile label="Target Touchpoints" value={formatNumber(touchpointsTarget)} sub="planned KPI" />
         <Tile label="Target Engagements" value={formatNumber(engagementsTarget)} sub="planned KPI" />
         <Tile
@@ -92,12 +109,15 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
           value={formatCurrency(costPer(planSpend, engagementsTarget))}
           sub="per target engagement"
         />
+        </div>
+        <DefinitionsLink />
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <Tile label="Total Touchpoints" value={formatNumber(touchpoints)} sub={`vs ${formatNumber(touchpointsTarget)} expected`}>
         {touchpointsTarget > 0 && <AttainmentBar pct={pctOfTarget(touchpoints, touchpointsTarget)} />}
       </Tile>
@@ -130,6 +150,8 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
 
       <Tile label="Cost per Touchpoint" value={formatCurrency(costPer(spend, touchpoints / 1000))} sub="per 1,000 touchpoints" />
       <Tile label="Cost per Engagement" value={formatCurrency(costPer(spend, engagements))} sub="per engagement" />
+      </div>
+      <DefinitionsLink />
     </div>
   );
 }

@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import {
+  Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SummaryBanner } from '@/components/dashboard/SummaryBanner';
+import { BrandMonthlyChart } from '@/components/dashboard/BrandMonthlyChart';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
@@ -12,6 +16,7 @@ import {
   TOUCHPOINT_KEYS,
   ENGAGEMENT_KEYS,
   sumKeys,
+  formatCompact,
   formatCurrency,
   formatNumber,
   formatPercent,
@@ -100,7 +105,19 @@ function ClientOverviewPage() {
           {eduPages.length > 0 && (
             <EducationLinks clientSlug={clientSlug} pages={eduPages} period={period} />
           )}
-          <PublisherCostSummary rows={summary.data.byPublisher} />
+          {summary.data.showBrandMonthlyChart &&
+            !summary.data.isPlan &&
+            summary.data.monthlyByBrand.length > 0 && (
+              <BrandMonthlyChart
+                brands={summary.data.monthlyByBrand}
+                from={summary.data.period.from}
+                to={summary.data.period.to}
+              />
+            )}
+          <PublisherPerformance
+            rows={summary.data.byPublisher}
+            showChart={summary.data.showPublisherChart && !summary.data.isPlan}
+          />
         </div>
       )}
     </div>
@@ -226,38 +243,119 @@ function EducationLinks({
   );
 }
 
-function PublisherCostSummary({ rows }: { rows: SummaryRow[] }) {
+/** "Australian Journal of Pharmacy" → "AJP"; single-word names stay as-is. */
+function publisherAbbrev(label: string): string {
+  const words = label.split(' ');
+  if (words.length === 1) return label;
+  return words
+    .filter((w) => /^[A-Z]/.test(w))
+    .map((w) => w[0])
+    .join('');
+}
+
+function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showChart: boolean }) {
+  const chartData = rows.map((r) => ({
+    name: r.label,
+    touchpoints: sumKeys(r.metrics, TOUCHPOINT_KEYS),
+    engagements: sumKeys(r.metrics, ENGAGEMENT_KEYS),
+  }));
+  const money = (v: number) =>
+    v.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 2 });
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cost by publisher</CardTitle>
-        <CardDescription>Spend (incl. CPD) versus planned, by publisher.</CardDescription>
+        <CardTitle>Publisher performance</CardTitle>
+        <CardDescription>Touchpoints, engagements and spend (incl. CPD) by publisher.</CardDescription>
       </CardHeader>
       <CardContent>
+        {showChart && (
+          <div className="mb-6 h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#454646"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  tickFormatter={publisherAbbrev}
+                />
+                <YAxis
+                  yAxisId="left"
+                  stroke="#454646"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => formatCompact(v as number)}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="#454646"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => formatCompact(v as number)}
+                />
+                <Tooltip
+                  formatter={(v) => (v as number).toLocaleString('en-AU')}
+                  contentStyle={{
+                    borderRadius: 3,
+                    border: '1px solid rgba(69, 70, 70, 0.1)',
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar yAxisId="left" dataKey="touchpoints" name="Touchpoints" fill="#6b7280" maxBarSize={36} />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="engagements"
+                  name="Engagements"
+                  stroke="#a21caf"
+                  strokeWidth={2}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
                 <th className="py-2 pr-4 font-medium">Publisher</th>
                 <th className="py-2 pr-4 text-right font-medium">Placements</th>
+                <th className="py-2 pr-4 text-right font-medium">Touchpoints</th>
+                <th className="py-2 pr-4 text-right font-medium">Engagements</th>
                 <th className="py-2 pr-4 text-right font-medium">Spend</th>
                 <th className="py-2 pr-4 text-right font-medium">Planned</th>
-                <th className="py-2 text-right font-medium">Touchpoints</th>
+                <th className="py-2 pr-4 text-right font-medium">CPM</th>
+                <th className="py-2 text-right font-medium">CPE</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => {
                 const spend = r.mediaCost + r.cpdInvestmentCost;
+                const touchpoints = sumKeys(r.metrics, TOUCHPOINT_KEYS);
+                const engagements = sumKeys(r.metrics, ENGAGEMENT_KEYS);
                 return (
                   <tr key={r.label} className="border-b border-ph-charcoal/5 last:border-0">
                     <td className="py-2 pr-4 font-medium text-ph-charcoal">{r.label}</td>
                     <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">{r.placementCount}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">{formatNumber(touchpoints)}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">{formatNumber(engagements)}</td>
                     <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">{formatCurrency(spend)}</td>
                     <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/60">
-                      {r.plannedMediaCost != null ? formatCurrency(r.plannedMediaCost) : '—'}
+                      {r.plannedMediaCost != null ? formatCurrency(r.plannedMediaCost) : '-'}
+                    </td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">
+                      {touchpoints > 0 ? money(spend / (touchpoints / 1000)) : '-'}
                     </td>
                     <td className="py-2 text-right tabular-nums text-ph-charcoal/80">
-                      {formatNumber(sumKeys(r.metrics, TOUCHPOINT_KEYS))}
+                      {engagements > 0 ? money(spend / engagements) : '-'}
                     </td>
                   </tr>
                 );

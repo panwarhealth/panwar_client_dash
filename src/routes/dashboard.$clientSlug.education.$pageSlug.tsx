@@ -5,6 +5,7 @@ import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
 import { EducationBarChart, EducationLegend } from '@/components/education/EducationBarChart';
+import { EducationAssetTables } from '@/components/education/EducationAssetTables';
 import { getEducationPage, getEducationPages } from '@/api/education';
 
 interface PeriodSearch {
@@ -112,6 +113,14 @@ function EducationPageView() {
             </CardContent>
           </Card>
         ))}
+
+      {page.data && (
+        <EducationAssetTables
+          assets={page.data.assets}
+          from={page.data.period.from}
+          to={page.data.period.to}
+        />
+      )}
     </div>
   );
 }

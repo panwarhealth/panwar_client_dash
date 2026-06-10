@@ -12,6 +12,18 @@ export interface ClientSummary {
   isPlan: boolean;
   /** Analyst-written summary for the window's end year; null when none exists. */
   summary: { year: number; text: string } | null;
+  /** Per-client toggle: render the monthly touchpoints-by-brand chart. */
+  showBrandMonthlyChart: boolean;
+  /** Per-client toggle: render the touchpoints-vs-engagements-by-publisher chart. */
+  showPublisherChart: boolean;
+  /** Monthly in-window metrics per brand; empty when disabled or planning. */
+  monthlyByBrand: BrandMonthly[];
+}
+
+export interface BrandMonthly {
+  label: string;
+  brandSlug: string;
+  months: { year: number; month: number; metrics: Record<string, number> }[];
 }
 
 export interface SummaryRow {
