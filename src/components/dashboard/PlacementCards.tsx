@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Newspaper, Mail, MonitorSmartphone, FileText, GraduationCap, ImageOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   formatCurrency,
@@ -35,12 +36,30 @@ function attainmentColour(pct: number): string {
   return 'text-rose-600';
 }
 
-function Artwork({ url, name }: { url: string | null; name: string }) {
+/** Media-type icon for the no-artwork placeholder. */
+function templateIcon(code: string) {
+  switch (code) {
+    case 'print': return Newspaper;
+    case 'edm': return Mail;
+    case 'digital_display': return MonitorSmartphone;
+    case 'education': return GraduationCap;
+    case 'sponsored_content': return FileText;
+    default: return ImageOff;
+  }
+}
+
+function Artwork({ url, name, templateCode }: { url: string | null; name: string; templateCode: string }) {
   const [failed, setFailed] = useState(false);
   if (!url || failed) {
+    const Icon = templateIcon(templateCode);
+    // Intentional placeholder (not a broken-image void): media-type icon + label
+    // on a soft tint, same height so the grid rows still line up.
     return (
-      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-md bg-ph-charcoal/5 text-xs text-ph-charcoal/40">
-        No artwork
+      <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-md bg-gradient-to-b from-ph-charcoal/[0.04] to-ph-charcoal/[0.07] text-ph-charcoal/30">
+        <Icon className="h-9 w-9" strokeWidth={1.5} />
+        <span className="text-[11px] font-medium uppercase tracking-wide">
+          {formatTemplateCode(templateCode)}
+        </span>
       </div>
     );
   }
@@ -99,6 +118,16 @@ function Chip({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Maria's per-placement findings from the workbook. */
+function PlacementFindings({ text }: { text: string }) {
+  return (
+    <div className="border-t border-ph-charcoal/10 pt-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-ph-charcoal">Findings</div>
+      <p className="mt-1 whitespace-pre-line text-sm leading-[1.7] text-ph-charcoal/75">{text}</p>
+    </div>
+  );
+}
+
 function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }) {
   const impressions = p.totals['impressions'] ?? 0;
   const clicks = p.totals['clicks'] ?? 0;
@@ -107,7 +136,7 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
   return (
     <Card>
       <CardContent className="flex flex-col gap-3 p-4">
-        <Artwork url={p.artworkViewUrl} name={p.name} />
+        <Artwork url={p.artworkViewUrl} name={p.name} templateCode={p.templateCode} />
 
         <div>
           <div className="flex items-start justify-between gap-2">
@@ -150,6 +179,8 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
             <Chip label="CPD" value={formatCurrency(p.cpdInvestmentCost)} />
           )}
         </div>
+
+        {p.comments && <PlacementFindings text={p.comments} />}
       </CardContent>
     </Card>
   );

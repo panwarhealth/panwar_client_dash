@@ -5,8 +5,12 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
  * Native bars on Windows are overlay-style and fade away unless hovered
  * (and Firefox ignores ::-webkit-scrollbar styling entirely), so we hide the
  * native bar and draw our own track + draggable thumb synced to scrollLeft.
+ *
+ * Pass `maxHeight` to cap the body and scroll vertically inside it - that keeps
+ * the horizontal bar (drawn just below) on screen for tall tables instead of
+ * forcing a scroll to the page bottom. Use with a `sticky top-0` thead.
  */
-export function HScroll({ children }: { children: ReactNode }) {
+export function HScroll({ children, maxHeight }: { children: ReactNode; maxHeight?: number | string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointerX: number; scrollLeft: number } | null>(null);
   const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
@@ -69,7 +73,12 @@ export function HScroll({ children }: { children: ReactNode }) {
 
   return (
     <div>
-      <div ref={scrollRef} onScroll={sync} className="hscroll overflow-x-auto">
+      <div
+        ref={scrollRef}
+        onScroll={sync}
+        className={`hscroll overflow-x-auto${maxHeight ? ' overflow-y-auto' : ''}`}
+        style={maxHeight ? { maxHeight } : undefined}
+      >
         {children}
       </div>
       {thumb && (

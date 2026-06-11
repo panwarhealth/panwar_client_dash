@@ -6,8 +6,9 @@ import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
 import { EducationBarChart, EducationLegend } from '@/components/education/EducationBarChart';
 import { EducationAssetTables } from '@/components/education/EducationAssetTables';
-import { getEducationPage, getEducationPages, type EducationChart } from '@/api/education';
+import { getEducationPage, type EducationChart } from '@/api/education';
 import { getClientBrands } from '@/api/clients';
+import { sweepToSectionAfterNav } from '@/lib/scroll';
 
 interface PeriodSearch {
   from?: string;
@@ -46,12 +47,6 @@ function EducationPageView() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: pages = [] } = useQuery({
-    queryKey: ['education', 'pages', clientSlug],
-    queryFn: () => getEducationPages(clientSlug),
-    staleTime: 30 * 1000,
-  });
-
   // Already loaded by the client layout - cache hit. Brand colours highlight
   // the brand column of the asset tables.
   const { data: clientData } = useQuery({
@@ -65,34 +60,20 @@ function EducationPageView() {
       .map((b) => [b.name.toLowerCase(), b.color!]),
   );
 
-  // With a single education page the Education index just redirects back here,
-  // so go up to the overview instead. The picker is only a real destination
-  // when there's more than one page.
-  const backClass =
-    'text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary';
-
   return (
     <div className="flex flex-col gap-6">
       <div>
-        {pages.length > 1 ? (
-          <Link
-            to="/dashboard/$clientSlug/education"
-            params={{ clientSlug }}
-            search={{ from, to }}
-            className={backClass}
-          >
-            ← Education
-          </Link>
-        ) : (
-          <Link
-            to="/dashboard/$clientSlug"
-            params={{ clientSlug }}
-            search={{ from, to }}
-            className={backClass}
-          >
-            ← Overview
-          </Link>
-        )}
+        {/* Back to the client overview, sweeping to its Education section -
+            that section lists every education page, so it doubles as the picker. */}
+        <Link
+          to="/dashboard/$clientSlug"
+          params={{ clientSlug }}
+          search={{ from, to }}
+          onClick={() => sweepToSectionAfterNav('education')}
+          className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
+        >
+          ← Overview
+        </Link>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold text-ph-charcoal">
             {page.data?.page.name ?? 'Loading…'}

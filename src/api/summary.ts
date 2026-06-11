@@ -18,6 +18,23 @@ export interface ClientSummary {
   showPublisherChart: boolean;
   /** Monthly in-window metrics per brand; empty when disabled or planning. */
   monthlyByBrand: BrandMonthly[];
+  /** Every placement as its own row (the workbook's FY25 Summary by Asset). */
+  byAsset: AssetRow[];
+}
+
+export interface AssetRow {
+  name: string;
+  brandName: string;
+  brandSlug: string;
+  audienceName: string;
+  publisherName: string;
+  objective: string;
+  /** Metric template code: 'print' | 'digital_display' | 'edm' | 'sponsored_content' | 'education'. */
+  templateCode: string;
+  mediaCost: number;
+  cpdInvestmentCost: number;
+  metrics: Record<string, number>;
+  targetMetrics: Record<string, number>;
 }
 
 export interface BrandMonthly {

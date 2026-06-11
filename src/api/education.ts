@@ -8,6 +8,12 @@ export interface EducationPageSummary {
   slug: string;
   sortOrder: number;
   chartCount: number;
+  /** Series across the page's charts. */
+  moduleCount: number;
+  /** Detail-table asset rows. */
+  assetCount: number;
+  /** Sum of the "Completed" status values (single-sourced from the asset tables). */
+  completions: number;
 }
 
 export interface EducationPoint {

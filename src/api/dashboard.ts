@@ -94,6 +94,8 @@ export interface DashboardPlacement {
   metricKeys: string[];
   totals: Record<string, number>;
   targets: Record<string, number>;
+  /** Analyst's findings/commentary for this placement (the workbook's per-placement comments); null when none. */
+  comments: string | null;
 }
 
 export async function getDashboard(

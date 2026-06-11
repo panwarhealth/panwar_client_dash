@@ -10,6 +10,7 @@ import { DashboardError } from '@/components/dashboard/DashboardError';
 import { AudienceTabs } from '@/components/picker/AudienceTabs';
 import { getClientBrands } from '@/api/clients';
 import { getDashboard } from '@/api/dashboard';
+import { sweepToSectionAfterNav } from '@/lib/scroll';
 
 interface PeriodSearch {
   from?: string;
@@ -49,25 +50,18 @@ function BrandAudienceDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        {availableAudiences.length > 1 ? (
-          <Link
-            to="/dashboard/$clientSlug/$brandSlug"
-            params={{ clientSlug, brandSlug }}
-            search={{ from, to }}
-            className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
-          >
-            ← Brand overview
-          </Link>
-        ) : (
-          <Link
-            to="/dashboard/$clientSlug"
-            params={{ clientSlug }}
-            search={{ from, to }}
-            className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
-          >
-            ← All brands
-          </Link>
-        )}
+        {/* Always go up to the client start page. The brand-overview page is
+            just an audience picker, and the audiences are already tabs below -
+            so that intermediate hop would be redundant. */}
+        <Link
+          to="/dashboard/$clientSlug"
+          params={{ clientSlug }}
+          search={{ from, to }}
+          onClick={() => sweepToSectionAfterNav('brands')}
+          className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
+        >
+          ← All brands
+        </Link>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
           <h1 className="flex items-center gap-2 text-2xl font-semibold text-ph-charcoal">
             {dashboard.data

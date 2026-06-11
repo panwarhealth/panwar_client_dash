@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getEducationPages } from '@/api/education';
+import { sweepToSectionAfterNav } from '@/lib/scroll';
 
 interface PeriodSearch {
   from?: string;
@@ -50,6 +51,7 @@ function EducationIndex() {
           to="/dashboard/$clientSlug"
           params={{ clientSlug }}
           search={{ from, to }}
+          onClick={() => sweepToSectionAfterNav('education')}
           className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
         >
           ← Overview
