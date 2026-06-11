@@ -94,7 +94,15 @@ export function EducationBarChart({
     s.points.forEach((p) => valueAt.set(`${s.id}:${ord(p.year, p.month)}`, p.value));
   });
 
-  const maxRaw = Math.max(1, ...Array.from(valueAt.values()));
+  // Scale the axis to the displayed window only - points outside it may
+  // exist when the window is narrower than the data.
+  const inWindow = new Set(months.map((m) => ord(m.year, m.month)));
+  let maxRaw = 1;
+  series.forEach((s) =>
+    s.points.forEach((p) => {
+      if (inWindow.has(ord(p.year, p.month))) maxRaw = Math.max(maxRaw, p.value);
+    }),
+  );
   const yMax = niceMax(maxRaw);
 
   const padL = 48;

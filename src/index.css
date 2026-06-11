@@ -26,3 +26,15 @@
     @apply bg-white text-ph-charcoal;
   }
 }
+
+/*
+ * HScroll renders its own always-visible scrollbar (browsers auto-hide
+ * native overlay bars and CSS can't reliably stop them) - hide the native
+ * one on its scroll container so there aren't two.
+ */
+.hscroll {
+  scrollbar-width: none;
+}
+.hscroll::-webkit-scrollbar {
+  display: none;
+}

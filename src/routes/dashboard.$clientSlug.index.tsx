@@ -4,6 +4,7 @@ import {
   Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { HScroll } from '@/components/HScroll';
 import { SummaryBanner } from '@/components/dashboard/SummaryBanner';
 import { BrandMonthlyChart } from '@/components/dashboard/BrandMonthlyChart';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
@@ -139,6 +140,13 @@ function YearSummaryCard({
   summary: { year: number; text: string };
   isPlan: boolean;
 }) {
+  // The summary is authored as blank-line-separated chunks (Overall /
+  // Pharmacists / GPs / recommendations); render each as its own paragraph.
+  const sections = summary.text
+    .split(/\n\s*\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return (
     <Card>
       <CardHeader>
@@ -147,9 +155,16 @@ function YearSummaryCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="whitespace-pre-line text-sm leading-relaxed text-ph-charcoal/80">
-          {summary.text}
-        </p>
+        {/* Full-width prose with extra top + bottom breathing room so it
+            separates from the title and the card edge. Horizontal padding stays
+            at the card default so it lines up with the other cards' content. */}
+        <div className="flex flex-col gap-5 pb-3 pt-4">
+          {sections.map((s, i) => (
+            <p key={i} className="whitespace-pre-line text-[15px] leading-[1.75] text-ph-charcoal/90">
+              {s}
+            </p>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
@@ -322,7 +337,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
             </ResponsiveContainer>
           </div>
         )}
-        <div className="overflow-x-auto">
+        <HScroll>
           <table className="w-full text-left text-sm">
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
@@ -362,7 +377,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
               })}
             </tbody>
           </table>
-        </div>
+        </HScroll>
       </CardContent>
     </Card>
   );

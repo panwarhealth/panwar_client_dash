@@ -13,6 +13,8 @@ export interface BrandSummary {
   id: string;
   name: string;
   slug: string;
+  /** Admin-set hex display colour used to highlight the brand on dashboards. */
+  color: string | null;
   /** Slugs of audiences with placements for this brand, ordered by audience name. */
   audienceSlugs: string[];
 }

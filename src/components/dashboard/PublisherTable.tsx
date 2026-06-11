@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { HScroll } from '@/components/HScroll';
 import { TOUCHPOINT_KEYS, formatCurrency, sumKeys } from '@/lib/metrics';
 import type { DashboardPublisher } from '@/api/dashboard';
 
@@ -10,7 +11,7 @@ export function PublisherTable({ publishers }: { publishers: DashboardPublisher[
         <CardDescription>Spend and reach by publisher, sorted by spend.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <HScroll>
           <table className="w-full text-left text-sm">
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
@@ -35,7 +36,7 @@ export function PublisherTable({ publishers }: { publishers: DashboardPublisher[
               ))}
             </tbody>
           </table>
-        </div>
+        </HScroll>
       </CardContent>
     </Card>
   );
