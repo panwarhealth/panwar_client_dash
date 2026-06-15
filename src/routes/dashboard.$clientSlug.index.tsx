@@ -423,7 +423,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
           </div>
         )}
         <HScroll>
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
                 <th className="py-2 pr-4 font-medium">Publisher</th>
@@ -602,7 +602,7 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
           <p className="py-6 text-center text-sm text-ph-charcoal/50">No assets match "{query}".</p>
         ) : (
         <HScroll maxHeight="70vh">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
             <thead className="text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
                 {/* Asset is pinned both top (header) and left (column) - corner cell, highest z. */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Newspaper, Mail, MonitorSmartphone, FileText, GraduationCap, ImageOff } from 'lucide-react';
+import { Newspaper, Mail, MonitorSmartphone, FileText, GraduationCap, ImageOff, Search, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   formatCurrency,
@@ -123,7 +123,7 @@ function PlacementFindings({ text }: { text: string }) {
   return (
     <div className="border-t border-ph-charcoal/10 pt-2">
       <div className="text-[11px] font-semibold uppercase tracking-wide text-ph-charcoal">Findings</div>
-      <p className="mt-1 whitespace-pre-line text-sm leading-[1.7] text-ph-charcoal/75">{text}</p>
+      <p className="mt-1 whitespace-pre-line text-sm leading-[1.7] tracking-[0.02em] text-ph-charcoal/75">{text}</p>
     </div>
   );
 }
@@ -186,6 +186,19 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
   );
 }
 
+/** Free-text haystack for a placement - everything the search filters against. */
+function placementHaystack(p: DashboardPlacement): string {
+  return [
+    p.name,
+    p.publisherName,
+    formatTemplateCode(p.templateCode),
+    p.subcategory ? formatSubcategory(p.subcategory) : '',
+    p.comments ?? '',
+  ]
+    .join(' ')
+    .toLowerCase();
+}
+
 export function PlacementCards({
   placements,
   isPlan = false,
@@ -193,20 +206,57 @@ export function PlacementCards({
   placements: DashboardPlacement[];
   isPlan?: boolean;
 }) {
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const filtered = q === '' ? placements : placements.filter((p) => placementHaystack(p).includes(q));
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Placements</CardTitle>
-        <CardDescription>
-          {placements.length} placements {isPlan ? 'planned for' : 'running across'} this brand × audience.
-        </CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>Placements</CardTitle>
+            <CardDescription>
+              {filtered.length}
+              {q !== '' && ` of ${placements.length}`} placements{' '}
+              {isPlan ? 'planned for' : 'running across'} this brand × audience.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {query !== '' && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                title="Clear filter"
+                aria-label="Clear filter"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-ph-charcoal/20 bg-white text-ph-charcoal/50 transition-colors hover:border-client-primary hover:text-client-primary"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            )}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ph-charcoal/40" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Filter placements…"
+                className="h-9 w-56 rounded-md border border-ph-charcoal/20 bg-white pl-8 pr-2 text-sm text-ph-charcoal focus:border-client-primary focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {placements.map((p) => (
-            <PlacementCard key={p.id} p={p} isPlan={isPlan} />
-          ))}
-        </div>
+        {filtered.length === 0 ? (
+          <p className="py-6 text-center text-sm text-ph-charcoal/50">No placements match "{query}".</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((p) => (
+              <PlacementCard key={p.id} p={p} isPlan={isPlan} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
