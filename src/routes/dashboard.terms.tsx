@@ -27,7 +27,7 @@ const SECTIONS: Section[] = [
   },
   {
     heading: '2. About Panwar Portals',
-    body: 'Panwar Portals provides online dashboards through which authorised clients and staff can view media performance reporting and related analytics. It is operated by Panwar Health Pty Ltd (ABN 15 631 093 966), PO Box 3227, Wamberal NSW 2260, Australia. Access is provided to authorised users only.',
+    body: 'Panwar Portals provides online dashboards through which authorised clients and staff can view media performance reporting and related analytics. It is operated by Sciety Pty Ltd (ABN 91 648 319 331), PO Box 3227, Wamberal NSW 2260, Australia. Access is provided to authorised users only.',
   },
   {
     heading: '3. Definitions',
@@ -63,7 +63,7 @@ const SECTIONS: Section[] = [
   {
     heading: '7. Intellectual Property',
     body:
-      'a. All intellectual property rights in the Services are owned by Panwar Health Pty Ltd and/or its content and data publishers.\n' +
+      'a. All intellectual property rights in the Services are owned by Sciety Pty Ltd and/or its content and data publishers.\n' +
       'b. All content is protected by copyright and all rights are reserved.\n' +
       'c. We grant you a limited, non-exclusive, non-transferable licence to access and use the Services for your authorised business purposes. You must not reproduce, distribute, publicly communicate, record, scrape or create derivative works from the content without our prior written consent.',
   },
@@ -163,7 +163,7 @@ const SECTIONS: Section[] = [
   {
     heading: '23. Contact',
     body:
-      '[CONTACT EMAIL] | Panwar Health Pty Ltd | ABN 15 631 093 966 | PO Box 3227, Wamberal NSW 2260, Australia\n' +
+      '[CONTACT EMAIL] | Sciety Pty Ltd | ABN 91 648 319 331 | PO Box 3227, Wamberal NSW 2260, Australia\n' +
       'Privacy complaints: Office of the Australian Information Commissioner (OAIC) at www.oaic.gov.au.',
   },
   {
