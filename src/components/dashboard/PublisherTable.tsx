@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { ArrowDown, ArrowUp, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HScroll } from '@/components/HScroll';
+import { ColResizeLines, useColumnResize } from '@/lib/columnResize';
 import { TOUCHPOINT_KEYS, formatCurrency, sumKeys } from '@/lib/metrics';
 import type { DashboardPublisher } from '@/api/dashboard';
 
 type PubSortKey = 'placements' | 'spend' | 'touchpoints';
+
+/** Column order + default widths (px). Stable module const - drives resize. */
+const COLUMNS = { publisher: 220, placements: 120, spend: 140, touchpoints: 140 };
 
 /** Sort value for a publisher row + column. */
 function publisherSortValue(p: DashboardPublisher, key: PubSortKey): number {
@@ -18,9 +22,10 @@ function publisherSortValue(p: DashboardPublisher, key: PubSortKey): number {
 
 export function PublisherTable({ publishers }: { publishers: DashboardPublisher[] }) {
   const [sort, setSort] = useState<{ key: PubSortKey; dir: 'asc' | 'desc' } | null>(null);
+  const cols = useColumnResize(COLUMNS);
 
   // Click a column: sort desc, click again to flip asc. The reset button
-  // clears back to the default order (the API's spend-sorted order).
+  // clears sorting and column widths back to defaults.
   const toggleSort = (key: PubSortKey) =>
     setSort((prev) =>
       !prev || prev.key !== key ? { key, dir: 'desc' } : { key, dir: prev.dir === 'desc' ? 'asc' : 'desc' },
@@ -71,7 +76,16 @@ export function PublisherTable({ publishers }: { publishers: DashboardPublisher[
       </CardHeader>
       <CardContent>
         <HScroll>
-          <table className="w-full text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+          <div ref={cols.measureRef} className="relative" style={{ width: cols.totalWidth }}>
+          <table
+            className="w-full table-fixed text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2"
+          >
+            <colgroup>
+              <col style={{ width: cols.widths.publisher }} />
+              <col style={{ width: cols.widths.placements }} />
+              <col style={{ width: cols.widths.spend }} />
+              <col style={{ width: cols.widths.touchpoints }} />
+            </colgroup>
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
                 <th className="py-2 pr-4 font-medium">Publisher</th>
@@ -88,13 +102,15 @@ export function PublisherTable({ publishers }: { publishers: DashboardPublisher[
                   <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">
                     {formatCurrency(p.mediaCost)}
                   </td>
-                  <td className="py-2 text-right tabular-nums text-ph-charcoal/80">
+                  <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">
                     {sumKeys(p.metrics, TOUCHPOINT_KEYS).toLocaleString('en-AU')}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <ColResizeLines cols={cols} />
+          </div>
         </HScroll>
       </CardContent>
     </Card>

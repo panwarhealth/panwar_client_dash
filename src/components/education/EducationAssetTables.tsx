@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, RotateCcw, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HScroll } from '@/components/HScroll';
+import { useColumnResize, type ColumnResize } from '@/lib/columnResize';
 import { MONTH_LABELS, formatNumber, monthsBetween } from '@/lib/metrics';
 import type { EducationAsset } from '@/api/education';
 
@@ -53,6 +54,45 @@ function assetTotal(a: EducationAsset): number {
   return a.statuses[0]?.total ?? 0;
 }
 
+/** Fixed width (px) of each monthly column - these are not individually resized. */
+const MONTH_W = 56;
+/** Order + default widths (px) of the resizable (non-month) columns. */
+const EDU_COLUMNS = { brand: 112, type: 96, title: 288, by: 128, expiry: 110, status: 96, total: 96 };
+/** Resizable columns left of the month block, in order. */
+const EDU_PRE_MONTH = ['brand', 'type', 'title', 'by', 'expiry', 'status'] as const;
+
+/**
+ * Divider lines for the education table. Like the generic `ColResizeLines` but
+ * the Total column sits after the month block, so its divider is pinned to the
+ * table's right edge rather than a running sum of the resizable widths.
+ */
+function EduResizeLines({ cols, tableWidth }: { cols: ColumnResize; tableWidth: number }) {
+  const lines: { id: string; x: number }[] = [];
+  let x = 0;
+  for (const id of EDU_PRE_MONTH) {
+    x += cols.widths[id];
+    lines.push({ id, x });
+  }
+  lines.push({ id: 'total', x: tableWidth });
+  return (
+    <>
+      {lines.map(({ id, x: left }) => (
+        <span
+          key={id}
+          onPointerDown={cols.startResize(id)}
+          onDoubleClick={() => cols.resetColumn(id)}
+          aria-hidden
+          // Left-anchored so the rightmost line never protrudes past the table edge.
+          className="group absolute top-0 z-30 h-full w-2 -translate-x-full cursor-col-resize touch-none select-none"
+          style={{ left }}
+        >
+          <span className="absolute inset-y-0 right-0 w-px bg-transparent group-hover:bg-client-primary/40" />
+        </span>
+      ))}
+    </>
+  );
+}
+
 /**
  * The workbook's per-asset education detail tables: one card per publisher
  * block, one row per asset status (Completed / Enrolled / Views) with monthly
@@ -77,8 +117,8 @@ export function EducationAssetTables({
 }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: AssetSortKey; dir: 'asc' | 'desc' } | null>(null);
-
   const months = useMemo(() => monthsBetween(from, to), [from, to]);
+  const cols = useColumnResize(EDU_COLUMNS, months.length * MONTH_W);
   const multiYear = useMemo(() => new Set(months.map((m) => m.year)).size > 1, [months]);
   const monthLabel = (m: { year: number; month: number }) =>
     multiYear ? `${MONTH_LABELS[m.month - 1]} '${String(m.year).slice(2)}` : MONTH_LABELS[m.month - 1];
@@ -137,6 +177,12 @@ export function EducationAssetTables({
   const ariaSort = (k: AssetSortKey) =>
     sort?.key === k ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none';
 
+  // Sticky left offsets follow the live widths so resizing Brand/Type shifts the
+  // columns pinned to their right. Table width = resizable cols + the month block.
+  const typeLeft = cols.widths.brand;
+  const titleLeft = cols.widths.brand + cols.widths.type;
+  const tableWidth = cols.totalWidth + months.length * MONTH_W;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -181,33 +227,48 @@ export function EducationAssetTables({
             </CardHeader>
             <CardContent>
               <HScroll>
-                <table className="w-full text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+                <div ref={cols.measureRef} className="relative" style={{ width: tableWidth }}>
+                <table className="w-full table-fixed text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+                  <colgroup>
+                    <col style={{ width: cols.widths.brand }} />
+                    <col style={{ width: cols.widths.type }} />
+                    <col style={{ width: cols.widths.title }} />
+                    <col style={{ width: cols.widths.by }} />
+                    <col style={{ width: cols.widths.expiry }} />
+                    <col style={{ width: cols.widths.status }} />
+                    {months.map((m) => (
+                      <col key={`${m.year}-${m.month}`} style={{ width: MONTH_W }} />
+                    ))}
+                    <col style={{ width: cols.widths.total }} />
+                  </colgroup>
                   <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
                     <tr>
-                      {/* Brand + Type + Title stay pinned while the months scroll.
-                          Widths are fixed so the cumulative left offsets line up. */}
+                      {/* Brand + Type + Title stay pinned while the months scroll;
+                          their left offsets follow the live (resizable) widths. */}
                       <th
-                        className="sticky left-0 z-10 w-28 min-w-28 cursor-pointer select-none bg-white py-2 pr-3 font-medium hover:text-ph-charcoal"
+                        className="sticky left-0 z-10 cursor-pointer select-none bg-white py-2 pr-3 font-medium hover:text-ph-charcoal"
                         onClick={() => toggleSort('brand')}
                         aria-sort={ariaSort('brand')}
                       >
                         <span className="inline-flex items-center gap-0.5">Brand <SortArrow k="brand" /></span>
                       </th>
                       <th
-                        className="sticky left-28 z-10 w-24 min-w-24 cursor-pointer select-none bg-white py-2 pr-3 font-medium hover:text-ph-charcoal"
+                        className="sticky z-10 cursor-pointer select-none bg-white py-2 pr-3 font-medium hover:text-ph-charcoal"
+                        style={{ left: typeLeft }}
                         onClick={() => toggleSort('type')}
                         aria-sort={ariaSort('type')}
                       >
                         <span className="inline-flex items-center gap-0.5">Type <SortArrow k="type" /></span>
                       </th>
                       <th
-                        className="sticky left-52 z-10 w-72 min-w-72 cursor-pointer select-none bg-white py-2 pr-3 font-medium shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)] hover:text-ph-charcoal"
+                        className="sticky z-10 cursor-pointer select-none bg-white py-2 pr-3 font-medium shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)] hover:text-ph-charcoal"
+                        style={{ left: titleLeft }}
                         onClick={() => toggleSort('title')}
                         aria-sort={ariaSort('title')}
                       >
                         <span className="inline-flex items-center gap-0.5">Title <SortArrow k="title" /></span>
                       </th>
-                      <th className="min-w-32 py-2 pr-3 font-medium">By</th>
+                      <th className="py-2 pr-3 font-medium">By</th>
                       <th className="py-2 pr-3 font-medium">Expiry</th>
                       <th className="py-2 pr-3 font-medium">Status</th>
                       {months.map((m) => (
@@ -216,7 +277,7 @@ export function EducationAssetTables({
                         </th>
                       ))}
                       <th
-                        className="min-w-24 cursor-pointer select-none border-l border-ph-charcoal/10 bg-yellow-50/70 py-2 pl-3 pr-3 text-right font-medium hover:text-ph-charcoal"
+                        className="cursor-pointer select-none border-l border-ph-charcoal/10 bg-yellow-50/70 py-2 pl-3 pr-3 text-right font-medium hover:text-ph-charcoal"
                         onClick={() => toggleSort('total')}
                         aria-sort={ariaSort('total')}
                       >
@@ -264,13 +325,15 @@ export function EducationAssetTables({
                                 </td>
                                 <td
                                   rowSpan={statuses.length}
-                                  className={`sticky left-28 z-10 ${stickyBg} py-2 pr-3 align-top text-ph-charcoal/70`}
+                                  className={`sticky z-10 ${stickyBg} py-2 pr-3 align-top text-ph-charcoal/70`}
+                                  style={{ left: typeLeft }}
                                 >
                                   {a.type ?? '-'}
                                 </td>
                                 <td
                                   rowSpan={statuses.length}
-                                  className={`sticky left-52 z-10 ${stickyBg} py-2 pr-3 align-top text-ph-charcoal shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]`}
+                                  className={`sticky z-10 ${stickyBg} py-2 pr-3 align-top text-ph-charcoal shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]`}
+                                  style={{ left: titleLeft }}
                                 >
                                   {a.title}
                                 </td>
@@ -308,6 +371,8 @@ export function EducationAssetTables({
                     })}
                   </tbody>
                 </table>
+                <EduResizeLines cols={cols} tableWidth={tableWidth} />
+                </div>
               </HScroll>
             </CardContent>
           </Card>

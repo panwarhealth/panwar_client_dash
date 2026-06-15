@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HScroll } from '@/components/HScroll';
+import { ColResizeLines, useColumnResize } from '@/lib/columnResize';
 import { SummaryBanner } from '@/components/dashboard/SummaryBanner';
 import { BrandMonthlyChart } from '@/components/dashboard/BrandMonthlyChart';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
@@ -303,8 +304,15 @@ function publisherSortValue(r: SummaryRow, key: PubSortKey): number | null {
   }
 }
 
+/** Column order + default widths (px) for the publisher performance table. */
+const PUB_PERF_COLUMNS = {
+  publisher: 180, placements: 110, touchpoints: 120, engagements: 120,
+  spend: 120, planned: 110, cpm: 90, cpe: 90,
+};
+
 function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showChart: boolean }) {
   const [sort, setSort] = useState<{ key: PubSortKey; dir: 'asc' | 'desc' } | null>(null);
+  const cols = useColumnResize(PUB_PERF_COLUMNS);
   // Chart keeps the API's default order so its bars never reshuffle on sort.
   const chartData = rows.map((r) => ({
     name: r.label,
@@ -423,7 +431,13 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
           </div>
         )}
         <HScroll>
-          <table className="w-full text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+          <div ref={cols.measureRef} className="relative" style={{ width: cols.totalWidth }}>
+          <table className="w-full table-fixed text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+            <colgroup>
+              {Object.keys(PUB_PERF_COLUMNS).map((id) => (
+                <col key={id} style={{ width: cols.widths[id] }} />
+              ))}
+            </colgroup>
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
                 <th className="py-2 pr-4 font-medium">Publisher</th>
@@ -433,7 +447,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
                 <SortTh k="spend" label="Spend" />
                 <SortTh k="planned" label="Planned" />
                 <SortTh k="cpm" label="CPM" />
-                <SortTh k="cpe" label="CPE" className="py-2 text-right font-medium" />
+                <SortTh k="cpe" label="CPE" className="py-2 pr-4 text-right font-medium" />
               </tr>
             </thead>
             <tbody>
@@ -454,7 +468,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
                     <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">
                       {touchpoints > 0 ? money(spend / (touchpoints / 1000)) : '-'}
                     </td>
-                    <td className="py-2 text-right tabular-nums text-ph-charcoal/80">
+                    <td className="py-2 pr-4 text-right tabular-nums text-ph-charcoal/80">
                       {engagements > 0 ? money(spend / engagements) : '-'}
                     </td>
                   </tr>
@@ -462,6 +476,8 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
               })}
             </tbody>
           </table>
+          <ColResizeLines cols={cols} />
+          </div>
         </HScroll>
       </CardContent>
     </Card>
@@ -500,9 +516,17 @@ function assetSortValue(r: AssetRow, key: SortKey): number | null {
   }
 }
 
+/** Column order + default widths (px) for the summary-by-asset table. */
+const ASSET_SUMMARY_COLUMNS = {
+  asset: 320, publisher: 150, audience: 130, print: 100, digital: 100,
+  touchpoints: 120, tpkpi: 90, engagements: 130, enkpi: 90, engrate: 100,
+  spend: 120, cpt: 100, cpe: 100,
+};
+
 function AssetSummary({ rows }: { rows: AssetRow[] }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' } | null>(null);
+  const cols = useColumnResize(ASSET_SUMMARY_COLUMNS);
   const money = (v: number) =>
     v.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 2 });
 
@@ -602,11 +626,17 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
           <p className="py-6 text-center text-sm text-ph-charcoal/50">No assets match "{query}".</p>
         ) : (
         <HScroll maxHeight="70vh">
-          <table className="w-full text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+          <div ref={cols.measureRef} className="relative" style={{ width: cols.totalWidth }}>
+          <table className="w-full table-fixed text-left text-sm tracking-[0.02em] [&_td:not(:first-child)]:pl-2 [&_th:not(:first-child)]:pl-2">
+            <colgroup>
+              {Object.keys(ASSET_SUMMARY_COLUMNS).map((id) => (
+                <col key={id} style={{ width: cols.widths[id] }} />
+              ))}
+            </colgroup>
             <thead className="text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
                 {/* Asset is pinned both top (header) and left (column) - corner cell, highest z. */}
-                <th className="sticky left-0 top-0 z-20 w-80 min-w-80 bg-white py-2 pr-3 font-medium shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]">
+                <th className="sticky left-0 top-0 z-20 bg-white py-2 pr-3 font-medium shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]">
                   Asset
                 </th>
                 <th className="sticky top-0 z-10 bg-white py-2 pr-3 font-medium whitespace-nowrap">Publisher</th>
@@ -623,7 +653,7 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
                 <SortTh
                   k="cpe"
                   label="CPE"
-                  className="sticky top-0 z-10 bg-white py-2 pl-3 text-right font-medium whitespace-nowrap"
+                  className="sticky top-0 z-10 bg-white py-2 pl-3 pr-3 text-right font-medium whitespace-nowrap"
                 />
               </tr>
             </thead>
@@ -650,11 +680,11 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
                     const rowBg = i % 2 === 1 ? 'bg-[#f7f7f8]' : 'bg-white';
                     return (
                       <tr key={`${g.brand}:${i}`} className={`${rowBg} border-b border-ph-charcoal/5 last:border-0`}>
-                        <td className={`sticky left-0 z-[1] ${rowBg} w-80 min-w-80 py-2 pr-3 text-ph-charcoal shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]`}>
+                        <td className={`sticky left-0 z-[1] ${rowBg} py-2 pr-3 text-ph-charcoal shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]`}>
                           {r.name}
                         </td>
-                        <td className="py-2 pr-3 whitespace-nowrap text-ph-charcoal/70">{r.publisherName}</td>
-                        <td className="py-2 pr-3 whitespace-nowrap text-ph-charcoal/70">{r.audienceName}</td>
+                        <td className="py-2 pr-3 text-ph-charcoal/70">{r.publisherName}</td>
+                        <td className="py-2 pr-3 text-ph-charcoal/70">{r.audienceName}</td>
                         <td className={`${num} ${isPrint ? 'text-ph-charcoal/80' : 'text-ph-charcoal/25'}`}>
                           {isPrint ? formatNumber(touchpoints) : '-'}
                         </td>
@@ -676,7 +706,7 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
                         <td className={`${num} text-ph-charcoal/80`}>
                           {touchpoints > 0 && spend > 0 ? money(spend / (touchpoints / 1000)) : '-'}
                         </td>
-                        <td className="py-2 pl-3 text-right tabular-nums text-ph-charcoal/80">
+                        <td className="py-2 pl-3 pr-3 text-right tabular-nums text-ph-charcoal/80">
                           {engagements > 0 && spend > 0 ? money(spend / engagements) : '-'}
                         </td>
                       </tr>
@@ -686,6 +716,8 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
               ))}
             </tbody>
           </table>
+          <ColResizeLines cols={cols} />
+          </div>
         </HScroll>
         )}
       </CardContent>
