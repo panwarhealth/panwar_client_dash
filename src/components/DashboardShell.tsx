@@ -71,10 +71,18 @@ export function DashboardShell() {
       </main>
 
       <footer className="border-t border-ph-charcoal/10 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 text-xs text-ph-charcoal/50">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 text-xs text-ph-charcoal/50">
           <span>
             Powered by <span className="font-medium text-ph-purple">Panwar Health</span>
           </span>
+          <nav className="flex items-center gap-4">
+            <Link to="/dashboard/privacy" className="hover:text-client-primary">
+              Privacy policy
+            </Link>
+            <Link to="/dashboard/terms" className="hover:text-client-primary">
+              Terms of Service
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>

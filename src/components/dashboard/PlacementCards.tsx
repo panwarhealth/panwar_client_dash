@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Newspaper, Mail, MonitorSmartphone, FileText, GraduationCap, ImageOff, Search, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Newspaper, Mail, MonitorSmartphone, FileText, GraduationCap, ImageOff, Search, RotateCcw, X, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   formatCurrency,
@@ -48,8 +49,63 @@ function templateIcon(code: string) {
   }
 }
 
+/** Full-screen artwork viewer: dark backdrop, large centred image, Esc / click
+ *  outside to close, with an "open original" escape hatch. Portalled to body so
+ *  no card overflow or stacking context can clip it. */
+function Lightbox({ url, name, onClose }: { url: string; name: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    // Stop the page behind from scrolling while the viewer is open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={name}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      {/* Stop clicks on the image/caption from bubbling to the backdrop. */}
+      <figure className="flex max-h-full max-w-5xl flex-col items-center" onClick={(e) => e.stopPropagation()}>
+        <img src={url} alt={name} className="max-h-[82vh] max-w-full rounded object-contain shadow-2xl" />
+        <figcaption className="mt-6 flex items-center gap-3 text-sm text-white/80">
+          <span className="max-w-md truncate">{name}</span>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-white/60 transition-colors hover:text-white"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> Open original
+          </a>
+        </figcaption>
+      </figure>
+    </div>,
+    document.body,
+  );
+}
+
 function Artwork({ url, name, templateCode }: { url: string | null; name: string; templateCode: string }) {
   const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState(false);
   if (!url || failed) {
     const Icon = templateIcon(templateCode);
     // Intentional placeholder (not a broken-image void): media-type icon + label
@@ -64,9 +120,17 @@ function Artwork({ url, name, templateCode }: { url: string | null; name: string
     );
   }
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="block aspect-[4/3] w-full overflow-hidden rounded-md bg-ph-charcoal/5">
-      <img src={url} alt={name} className="h-full w-full object-contain" onError={() => setFailed(true)} />
-    </a>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-md bg-ph-charcoal/5"
+        aria-label={`View artwork: ${name}`}
+      >
+        <img src={url} alt={name} className="h-full w-full object-contain" onError={() => setFailed(true)} />
+      </button>
+      {open && <Lightbox url={url} name={name} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
