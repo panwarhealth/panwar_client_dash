@@ -43,8 +43,7 @@ panwar_client_dash/
 │   │   ├── dashboard.index.tsx   # /dashboard (client overview stub)
 │   │   ├── dashboard.brands.$brandSlug.tsx
 │   │   ├── dashboard.brands.$brandSlug.audiences.$audienceSlug.tsx
-│   │   ├── dashboard.education.tsx
-│   │   └── dashboard.utm.tsx
+│   │   └── dashboard.education.tsx
 │   ├── routeTree.gen.ts          # GENERATED — do not edit
 │   ├── index.css                 # Tailwind directives + CSS variables
 │   ├── main.tsx                  # QueryClient + RouterProvider

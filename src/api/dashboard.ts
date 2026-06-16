@@ -76,10 +76,8 @@ export interface DashboardPlacement {
   publisherName: string;
   publisherSlug: string;
   isBonus: boolean;
-  isCpdPackage: boolean;
   mediaCost: number;
   plannedMediaCost: number | null;
-  cpdInvestmentCost: number | null;
   artworkViewUrl: string | null;
   liveMonths: number[];
   /** eDM send date / education range start ("YYYY-MM-DD"); null for live-month placements. */

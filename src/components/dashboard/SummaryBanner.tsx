@@ -131,7 +131,13 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
       <Tile
         label="Spend (incl CPD)"
         value={formatCurrency(spend)}
-        sub={planned != null ? `of ${formatCurrency(planned)} planned` : `${formatCurrency(totals.cpdInvestmentCost)} CPD investment`}
+        sub={
+          totals.cpdInvestmentCost > 0
+            ? `${formatCurrency(totals.mediaCost)} media + ${formatCurrency(totals.cpdInvestmentCost)} CPD`
+            : planned != null
+              ? `of ${formatCurrency(planned)} planned`
+              : undefined
+        }
       >
         {planned != null && planned > 0 && (
           <div className="mt-2">

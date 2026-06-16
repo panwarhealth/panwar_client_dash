@@ -207,7 +207,6 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
             <h3 className="text-sm font-semibold leading-snug text-ph-charcoal">{p.name}</h3>
             <div className="flex shrink-0 gap-1">
               {p.isBonus && <span className="rounded bg-ph-sky/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-ph-sky">Bonus</span>}
-              {p.isCpdPackage && <span className="rounded bg-ph-coral/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-ph-coral">CPD</span>}
             </div>
           </div>
           <p className="mt-0.5 text-xs text-ph-charcoal/50">
@@ -239,9 +238,6 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
           {impressions > 0 && clicks > 0 && <Chip label="CTR" value={formatPercent(ctr(clicks, impressions), 2)} />}
           {impressions > 0 && <Chip label="CPM" value={formatCurrency(cpm(p.mediaCost, impressions))} />}
           {clicks > 0 && <Chip label="CPC" value={formatCurrency(cpc(p.mediaCost, clicks))} />}
-          {p.cpdInvestmentCost != null && p.cpdInvestmentCost > 0 && (
-            <Chip label="CPD" value={formatCurrency(p.cpdInvestmentCost)} />
-          )}
         </div>
 
         {p.comments && <PlacementFindings text={p.comments} />}

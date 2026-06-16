@@ -5,9 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
  * Terms of Service. Adapted from Panwar Health's master ToS template for the
  * Panwar Portals reporting dashboards - the CPD/AHPRA/clinical-audit/sponsorship
  * clauses from the source (written for the HCP CPD platforms) have been removed
- * and the remaining body reworded for a B2B reporting portal. Values still in
- * [SQUARE BRACKETS] need to be filled before going live. Plain hyphens only; no
- * mention of Entra/SSO in this client-facing copy.
+ * and the remaining body reworded for a B2B reporting portal. Plain hyphens
+ * only; no mention of Entra/SSO in this client-facing copy.
  */
 export const Route = createFileRoute('/dashboard/terms')({
   component: TermsView,
@@ -18,7 +17,7 @@ interface Section {
   body: string;
 }
 
-const LAST_UPDATED = '[DATE]';
+const LAST_UPDATED = '16 June 2026';
 
 const SECTIONS: Section[] = [
   {
@@ -27,7 +26,7 @@ const SECTIONS: Section[] = [
   },
   {
     heading: '2. About Panwar Portals',
-    body: 'Panwar Portals provides online dashboards through which authorised clients and staff can view media performance reporting and related analytics. It is operated by Sciety Pty Ltd (ABN 91 648 319 331), PO Box 3227, Wamberal NSW 2260, Australia. Access is provided to authorised users only.',
+    body: 'Panwar Portals provides online dashboards through which authorised clients and staff can view media performance reporting and related analytics. It is operated by Panwar Health Pty Ltd (ABN 15 631 093 966), PO Box 3227, Wamberal NSW 2260, Australia. Access is provided to authorised users only.',
   },
   {
     heading: '3. Definitions',
@@ -47,7 +46,7 @@ const SECTIONS: Section[] = [
     heading: '5. Account Access',
     body:
       'a. Access to the Portal is granted to authorised users only.\n' +
-      'b. Keep your account and sign-in details confidential. Report any unauthorised access to [CONTACT EMAIL].\n' +
+      'b. Keep your account and sign-in details confidential. Report any unauthorised access to gabriel@panwarhealth.com.au.\n' +
       'c. Accounts are for the named individual and must not be shared.',
   },
   {
@@ -63,7 +62,7 @@ const SECTIONS: Section[] = [
   {
     heading: '7. Intellectual Property',
     body:
-      'a. All intellectual property rights in the Services are owned by Sciety Pty Ltd and/or its content and data publishers.\n' +
+      'a. All intellectual property rights in the Services are owned by Panwar Health Pty Ltd and/or its content and data publishers.\n' +
       'b. All content is protected by copyright and all rights are reserved.\n' +
       'c. We grant you a limited, non-exclusive, non-transferable licence to access and use the Services for your authorised business purposes. You must not reproduce, distribute, publicly communicate, record, scrape or create derivative works from the content without our prior written consent.',
   },
@@ -110,10 +109,10 @@ const SECTIONS: Section[] = [
     heading: '14. Privacy and Data',
     body:
       'a. We comply with the Privacy Act and the Australian Privacy Principles. Full details are set out in our Privacy Policy.\n' +
-      'b. You can access, correct or request deletion of your personal information by contacting our Privacy Officer at [PRIVACY OFFICER CONTACT]. We will respond within a reasonable timeframe and in accordance with the APPs.\n' +
+      'b. You can access, correct or request deletion of your personal information by contacting us at gabriel@panwarhealth.com.au. We will respond within a reasonable timeframe and in accordance with the APPs.\n' +
       'c. We take reasonable steps to protect personal information against loss, misuse, interference, and unauthorised access, modification or disclosure, including appropriate data security systems and staff privacy training.\n' +
-      'd. [DATA LOCATION - confirm where personal information is stored and processed and whether any provider is located overseas, then state the cross-border (APP 8) position here.]\n' +
-      'e. If you have a complaint about our handling of personal information, contact our Privacy Officer. If you are not satisfied, you may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) at www.oaic.gov.au.\n' +
+      'd. Personal information is stored and processed in Australia using Microsoft Azure (Australia East region). Cloudflare provides content delivery and security and may process request metadata, including IP addresses, at edge nodes outside Australia. Where information is handled overseas, we take reasonable steps to ensure recipients comply with the Australian Privacy Principles in accordance with APP 8.\n' +
+      'e. If you have a complaint about our handling of personal information, contact us at gabriel@panwarhealth.com.au. If you are not satisfied, you may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) at www.oaic.gov.au.\n' +
       'f. If we become aware of a notifiable data breach under the Privacy Act, we will promptly assess it, notify affected individuals and the OAIC within the time prescribed by law, and take reasonable steps to mitigate any harm.',
   },
   {
@@ -163,7 +162,7 @@ const SECTIONS: Section[] = [
   {
     heading: '23. Contact',
     body:
-      '[CONTACT EMAIL] | Sciety Pty Ltd | ABN 91 648 319 331 | PO Box 3227, Wamberal NSW 2260, Australia\n' +
+      'gabriel@panwarhealth.com.au | Panwar Health Pty Ltd | ABN 15 631 093 966 | PO Box 3227, Wamberal NSW 2260, Australia\n' +
       'Privacy complaints: Office of the Australian Information Commissioner (OAIC) at www.oaic.gov.au.',
   },
   {
