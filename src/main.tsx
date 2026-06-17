@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { msalInstance } from '@/lib/msal';
 import { exchangeEntraToken } from '@/api/auth';
+import { captureDeeplink } from '@/lib/deeplink';
 import { routeTree } from './routeTree.gen';
 import './index.css';
 
@@ -48,6 +49,8 @@ function render() {
  * the router lands in the right place.
  */
 async function boot() {
+  captureDeeplink();
+
   await msalInstance.initialize();
 
   const result = await msalInstance.handleRedirectPromise();

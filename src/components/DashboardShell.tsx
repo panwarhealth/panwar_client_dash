@@ -1,9 +1,12 @@
+import { useEffect, useRef } from 'react';
 import { Link, Outlet, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth, useLogout } from '@/hooks/useAuth';
 import { getClientBrands } from '@/api/clients';
+import { postViewBeacon } from '@/api/auth';
+import { consumeDeeplink } from '@/lib/deeplink';
 
 /**
  * Authed shell layout for /dashboard/* routes. Header adapts to the current
@@ -13,6 +16,19 @@ import { getClientBrands } from '@/api/clients';
 export function DashboardShell() {
   const { user } = useAuth();
   const logout = useLogout();
+
+  // Now that we're authed, fire the report-invite "viewed" beacon and, if we
+  // were bounced through login, restore the deeplinked page.
+  const deeplinkHandled = useRef(false);
+  useEffect(() => {
+    if (deeplinkHandled.current) return;
+    deeplinkHandled.current = true;
+    const pending = consumeDeeplink();
+    if (!pending) return;
+    postViewBeacon(pending.token);
+    const current = window.location.pathname + window.location.search;
+    if (pending.path !== current) window.location.replace(pending.path);
+  }, []);
 
   // `clientSlug` is only present on client-scoped routes
   const params = useParams({ strict: false }) as { clientSlug?: string };

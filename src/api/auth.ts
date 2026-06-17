@@ -1,4 +1,4 @@
-import { apiFetch } from './client';
+import { apiFetch, BASE_URL } from './client';
 
 /**
  * Mirror of API's MeResponse. Client-specific fields (branding, brands) now
@@ -43,4 +43,22 @@ export async function getMe(): Promise<MeResponse> {
 
 export async function logout(): Promise<void> {
   await apiFetch('/auth/logout', { method: 'POST' });
+}
+
+/**
+ * Best-effort "viewed" beacon for report-invite tracking. keepalive lets the
+ * POST finish even if we immediately navigate to the deeplinked page.
+ */
+export function postViewBeacon(token: string): void {
+  try {
+    void fetch(`${BASE_URL}/track/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+      credentials: 'include',
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // best-effort only
+  }
 }

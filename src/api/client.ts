@@ -8,7 +8,7 @@
  * - JavaScript never touches the JWT — it lives in the HttpOnly cookie.
  */
 
-const BASE_URL =
+export const BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:7071/api';
 
 export class ApiError extends Error {
