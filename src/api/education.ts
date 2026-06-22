@@ -73,9 +73,16 @@ export interface EducationPageResponse {
   assets: EducationAsset[];
 }
 
-export async function getEducationPages(clientSlug: string): Promise<EducationPageSummary[]> {
+export async function getEducationPages(
+  clientSlug: string,
+  period?: { from?: string; to?: string },
+): Promise<EducationPageSummary[]> {
+  const qs = new URLSearchParams();
+  if (period?.from) qs.set('from', period.from);
+  if (period?.to) qs.set('to', period.to);
+  const suffix = qs.toString() ? `?${qs}` : '';
   const res = await apiFetch<{ pages: EducationPageSummary[] }>(
-    `/dashboards/${encodeURIComponent(clientSlug)}/education`,
+    `/dashboards/${encodeURIComponent(clientSlug)}/education${suffix}`,
   );
   return res.pages;
 }

@@ -22,11 +22,11 @@ function bandClass(pct: number): string {
 }
 
 function AttainmentBar({ pct }: { pct: number }) {
-  const clamped = Math.max(0, Math.min(pct, 1.5));
+  const fill = Math.max(0, Math.min(pct, 1));
   return (
     <div className="mt-2">
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-ph-charcoal/10">
-        <div className={`h-full rounded-full ${bandClass(pct)}`} style={{ width: `${(clamped / 1.5) * 100}%` }} />
+        <div className={`h-full rounded-full ${bandClass(pct)}`} style={{ width: `${fill * 100}%` }} />
       </div>
       <span className="mt-1 block text-xs font-medium text-ph-charcoal/60">
         {formatPercent(pct)} of KPI
@@ -143,7 +143,7 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
           <div className="mt-2">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-ph-charcoal/10">
               <div
-                className="h-full rounded-full bg-client-primary"
+                className={`h-full rounded-full ${spend > planned ? 'bg-rose-500' : 'bg-emerald-500'}`}
                 style={{ width: `${Math.min((spend / planned) * 100, 100)}%` }}
               />
             </div>

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, RotateCcw, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -46,6 +46,16 @@ function attainmentColour(pct: number): string {
   return 'text-rose-600';
 }
 
+function readableOn(hex: string | null): string {
+  if (!hex) return '#ffffff';
+  const h = hex.replace('#', '');
+  if (h.length < 6) return '#ffffff';
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#1a1a1a' : '#ffffff';
+}
+
 function ClientOverviewPage() {
   const { clientSlug } = Route.useParams();
   const { from, to } = Route.useSearch();
@@ -66,11 +76,15 @@ function ClientOverviewPage() {
   });
   const showBackLink = myClients.length > 1;
 
+  const resolvedPeriod = summary.data?.period;
   const { data: eduPages = [] } = useQuery({
-    queryKey: ['education', 'pages', clientSlug],
-    queryFn: () => getEducationPages(clientSlug),
+    queryKey: ['education', 'pages', clientSlug, resolvedPeriod?.from ?? '', resolvedPeriod?.to ?? ''],
+    queryFn: () => getEducationPages(clientSlug, resolvedPeriod),
+    enabled: !!resolvedPeriod,
     staleTime: 30 * 1000,
   });
+
+  const brands = summary.data?.brands ?? [];
 
 
   return (
@@ -123,10 +137,46 @@ function ClientOverviewPage() {
                 to={summary.data.period.to}
               />
             )}
-          <PublisherPerformance
+          <PerformanceSummary
+            title="Publisher performance"
+            subtitle="Touchpoints, engagements and spend (incl. CPD) by publisher."
+            dimensionLabel="Publisher"
+            clientSlug={clientSlug}
+            from={from}
+            to={to}
+            dimension="byPublisher"
             rows={summary.data.byPublisher}
             showChart={summary.data.showPublisherChart && !summary.data.isPlan}
+            abbreviate={publisherAbbrev}
+            brands={brands}
           />
+
+          <PerformanceSummary
+            title="Category performance"
+            subtitle="Touchpoints, engagements and spend by category."
+            dimensionLabel="Category"
+            clientSlug={clientSlug}
+            from={from}
+            to={to}
+            dimension="byCategory"
+            rows={summary.data.byCategory}
+            showChart={summary.data.showPublisherChart && !summary.data.isPlan}
+            brands={brands}
+          />
+
+          <PerformanceSummary
+            title="Digital format performance"
+            subtitle="Touchpoints, engagements and spend by digital format."
+            dimensionLabel="Format"
+            clientSlug={clientSlug}
+            from={from}
+            to={to}
+            dimension="byDigitalFormat"
+            rows={summary.data.byDigitalFormat}
+            showChart={summary.data.showPublisherChart && !summary.data.isPlan}
+            brands={brands}
+          />
+
           {!summary.data.isPlan && summary.data.byAsset.length > 0 && (
             <AssetSummary rows={summary.data.byAsset} />
           )}
@@ -200,10 +250,12 @@ function BrandAudienceRollup({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((r) => {
             const touchpoints = sumKeys(r.metrics, TOUCHPOINT_KEYS);
-            const target = sumKeys(r.targetMetrics, TOUCHPOINT_KEYS);
             const engagements = sumKeys(r.metrics, ENGAGEMENT_KEYS);
+            const tpTarget = sumKeys(r.targetMetrics, TOUCHPOINT_KEYS);
+            const enTarget = sumKeys(r.targetMetrics, ENGAGEMENT_KEYS);
             const spend = r.mediaCost + r.cpdInvestmentCost;
-            const pct = target > 0 ? pctOfTarget(touchpoints, target) : null;
+            const tpPct = tpTarget > 0 ? pctOfTarget(touchpoints, tpTarget) : null;
+            const enPct = enTarget > 0 ? pctOfTarget(engagements, enTarget) : null;
             return (
               <Link
                 key={r.label}
@@ -215,13 +267,18 @@ function BrandAudienceRollup({
                 <div className="text-sm font-semibold text-ph-charcoal">{r.label}</div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                   <Stat label="Touchpoints" value={formatNumber(touchpoints)} />
-                  <Stat label="Engagements" value={formatNumber(engagements)} />
-                  <Stat label="Spend" value={formatCurrency(spend)} />
                   <Stat
-                    label="% of KPI"
-                    value={pct != null ? formatPercent(pct) : '—'}
-                    className={pct != null ? attainmentColour(pct) : undefined}
+                    label="Touchpoints % of KPI"
+                    value={tpPct != null ? formatPercent(tpPct) : '—'}
+                    className={tpPct != null ? attainmentColour(tpPct) : undefined}
                   />
+                  <Stat label="Engagements" value={formatNumber(engagements)} />
+                  <Stat
+                    label="Engagements % of KPI"
+                    value={enPct != null ? formatPercent(enPct) : '—'}
+                    className={enPct != null ? attainmentColour(enPct) : undefined}
+                  />
+                  <Stat label="Spend" value={formatCurrency(spend)} />
                 </div>
               </Link>
             );
@@ -310,11 +367,44 @@ const PUB_PERF_COLUMNS = {
   spend: 120, planned: 110, cpm: 90, cpe: 90,
 };
 
-function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showChart: boolean }) {
+function PerformanceSummary({
+  title,
+  subtitle,
+  dimensionLabel,
+  clientSlug,
+  from,
+  to,
+  dimension,
+  rows,
+  showChart,
+  abbreviate = (s) => s,
+  brands,
+}: {
+  title: string;
+  subtitle: string;
+  dimensionLabel: string;
+  clientSlug: string;
+  from?: string;
+  to?: string;
+  dimension: 'byPublisher' | 'byCategory' | 'byDigitalFormat';
+  rows: SummaryRow[];
+  showChart: boolean;
+  abbreviate?: (label: string) => string;
+  brands?: { slug: string; name: string; color: string | null }[];
+}) {
+  const [brand, setBrand] = useState<string | null>(null);
+  const activeBrand = brand ? brands?.find((b) => b.slug === brand) : undefined;
+  const brandQuery = useQuery({
+    queryKey: ['summary', clientSlug, from ?? '', to ?? '', brand],
+    queryFn: () => getClientSummary(clientSlug, { from, to, brand: brand ?? undefined }),
+    enabled: !!brand,
+    staleTime: 0,
+  });
+  const data = brand && brandQuery.data ? brandQuery.data[dimension] : rows;
+
   const [sort, setSort] = useState<{ key: PubSortKey; dir: 'asc' | 'desc' } | null>(null);
   const cols = useColumnResize(PUB_PERF_COLUMNS);
-  // Chart keeps the API's default order so its bars never reshuffle on sort.
-  const chartData = rows.map((r) => ({
+  const chartData = data.map((r) => ({
     name: r.label,
     touchpoints: sumKeys(r.metrics, TOUCHPOINT_KEYS),
     engagements: sumKeys(r.metrics, ENGAGEMENT_KEYS),
@@ -331,7 +421,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
 
   // Only the table sorts; nulls always last.
   const tableRows = sort
-    ? [...rows].sort((a, b) => {
+    ? [...data].sort((a, b) => {
         const av = publisherSortValue(a, sort.key);
         const bv = publisherSortValue(b, sort.key);
         if (av === null && bv === null) return 0;
@@ -339,7 +429,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
         if (bv === null) return -1;
         return sort.dir === 'desc' ? bv - av : av - bv;
       })
-    : rows;
+    : data;
 
   const SortTh = ({ k, label, className }: { k: PubSortKey; label: string; className?: string }) => (
     <th
@@ -360,20 +450,45 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <CardTitle>Publisher performance</CardTitle>
-            <CardDescription>Touchpoints, engagements and spend (incl. CPD) by publisher.</CardDescription>
+            {activeBrand && (
+              <span
+                className="mb-1.5 inline-block rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
+                style={{ backgroundColor: activeBrand.color ?? '#454646', color: readableOn(activeBrand.color) }}
+              >
+                {activeBrand.name}
+              </span>
+            )}
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{subtitle}</CardDescription>
           </div>
-          {sort !== null && (
-            <button
-              type="button"
-              onClick={() => setSort(null)}
-              title="Clear sorting"
-              aria-label="Clear sorting"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-ph-charcoal/20 bg-white text-ph-charcoal/50 transition-colors hover:border-client-primary hover:text-client-primary"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {brands && brands.length > 1 && (
+              <select
+                value={brand ?? ''}
+                onChange={(e) => setBrand(e.target.value || null)}
+                aria-label="Filter by brand"
+                className="h-9 rounded-md border border-ph-charcoal/20 bg-white px-2 text-sm text-ph-charcoal/80 transition-colors hover:border-client-primary focus:border-client-primary focus:outline-none"
+              >
+                <option value="">All brands</option>
+                {brands.map((b) => (
+                  <option key={b.slug} value={b.slug}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {sort !== null && (
+              <button
+                type="button"
+                onClick={() => setSort(null)}
+                title="Clear sorting"
+                aria-label="Clear sorting"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-ph-charcoal/20 bg-white text-ph-charcoal/50 transition-colors hover:border-client-primary hover:text-client-primary"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -389,7 +504,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
                   tickLine={false}
                   axisLine={false}
                   interval={0}
-                  tickFormatter={publisherAbbrev}
+                  tickFormatter={abbreviate}
                 />
                 <YAxis
                   yAxisId="left"
@@ -417,7 +532,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar yAxisId="left" dataKey="touchpoints" name="Touchpoints" fill="#6b7280" maxBarSize={36} />
+                <Bar yAxisId="left" dataKey="touchpoints" name="Touchpoints" fill="#6b7280" maxBarSize={36} isAnimationActive={false} />
                 <Line
                   yAxisId="right"
                   type="linear"
@@ -425,6 +540,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
                   name="Engagements"
                   stroke="#a21caf"
                   strokeWidth={2}
+                  isAnimationActive={false}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -440,7 +556,7 @@ function PublisherPerformance({ rows, showChart }: { rows: SummaryRow[]; showCha
             </colgroup>
             <thead className="border-b border-ph-charcoal/10 text-xs uppercase tracking-wide text-ph-charcoal/60">
               <tr>
-                <th className="py-2 pr-4 font-medium">Publisher</th>
+                <th className="py-2 pr-4 font-medium">{dimensionLabel}</th>
                 <SortTh k="placements" label="Placements" />
                 <SortTh k="touchpoints" label="Touchpoints" />
                 <SortTh k="engagements" label="Engagements" />
@@ -518,7 +634,7 @@ function assetSortValue(r: AssetRow, key: SortKey): number | null {
 
 /** Column order + default widths (px) for the summary-by-asset table. */
 const ASSET_SUMMARY_COLUMNS = {
-  asset: 320, publisher: 150, audience: 130, print: 100, digital: 100,
+  asset: 320, publisher: 150, brand: 130, audience: 130, print: 100, digital: 100,
   touchpoints: 120, tpkpi: 90, engagements: 130, enkpi: 90, engrate: 100,
   spend: 120, cpt: 100, cpe: 100,
 };
@@ -537,33 +653,21 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
       !prev || prev.key !== key ? { key, dir: 'desc' } : { key, dir: prev.dir === 'desc' ? 'asc' : 'desc' },
     );
 
-  // Live filter on asset name + publisher (what people look an asset up by).
   const q = query.trim().toLowerCase();
   const filtered = q
-    ? rows.filter((r) => `${r.name} ${r.publisherName}`.toLowerCase().includes(q))
+    ? rows.filter((r) => `${r.name} ${r.publisherName} ${r.brandName}`.toLowerCase().includes(q))
     : rows;
 
-  // Group by brand, preserving the API's order (brand, publisher, name).
-  const groups: { brand: string; rows: AssetRow[] }[] = [];
-  for (const r of filtered) {
-    const g = groups.find((x) => x.brand === r.brandName);
-    if (g) g.rows.push(r);
-    else groups.push({ brand: r.brandName, rows: [r] });
-  }
-  // Sort within each brand group so the grouped layout stays intact; nulls last.
-  if (sort) {
-    const { key, dir } = sort;
-    for (const g of groups) {
-      g.rows = [...g.rows].sort((a, b) => {
-        const av = assetSortValue(a, key);
-        const bv = assetSortValue(b, key);
+  const sorted = sort
+    ? [...filtered].sort((a, b) => {
+        const av = assetSortValue(a, sort.key);
+        const bv = assetSortValue(b, sort.key);
         if (av === null && bv === null) return 0;
         if (av === null) return 1;
         if (bv === null) return -1;
-        return dir === 'desc' ? bv - av : av - bv;
-      });
-    }
-  }
+        return sort.dir === 'desc' ? bv - av : av - bv;
+      })
+    : filtered;
 
   const num = 'px-3 py-2 text-right tabular-nums';
   // Pinned header cells: opaque bg so rows scrolling under them don't bleed.
@@ -622,7 +726,7 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
         </div>
       </CardHeader>
       <CardContent>
-        {groups.length === 0 ? (
+        {sorted.length === 0 ? (
           <p className="py-6 text-center text-sm text-ph-charcoal/50">No assets match "{query}".</p>
         ) : (
         <HScroll maxHeight="70vh">
@@ -640,6 +744,7 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
                   Asset
                 </th>
                 <th className="sticky top-0 z-10 bg-white py-2 pr-3 font-medium whitespace-nowrap">Publisher</th>
+                <th className="sticky top-0 z-10 bg-white py-2 pr-3 font-medium whitespace-nowrap">Brand</th>
                 <th className="sticky top-0 z-10 bg-white py-2 pr-3 font-medium whitespace-nowrap">Audience</th>
                 <SortTh k="print" label="Print" />
                 <SortTh k="digital" label="Digital" />
@@ -658,62 +763,49 @@ function AssetSummary({ rows }: { rows: AssetRow[] }) {
               </tr>
             </thead>
             <tbody>
-              {groups.map((g) => (
-                <Fragment key={g.brand}>
-                  <tr>
-                    {/* Full-width grey bar, but the label is pinned left via an
-                        inner sticky span (a full-width colSpan cell can't pin itself). */}
-                    <td colSpan={13} className="bg-[#ececee] p-0">
-                      <div className="sticky left-0 inline-block px-1 py-1.5 text-xs font-semibold uppercase tracking-wide text-ph-charcoal/70">
-                        {g.brand}
-                      </div>
+              {sorted.map((r, i) => {
+                const touchpoints = sumKeys(r.metrics, TOUCHPOINT_KEYS);
+                const engagements = sumKeys(r.metrics, ENGAGEMENT_KEYS);
+                const tpTarget = sumKeys(r.targetMetrics, TOUCHPOINT_KEYS);
+                const enTarget = sumKeys(r.targetMetrics, ENGAGEMENT_KEYS);
+                const spend = r.mediaCost + r.cpdInvestmentCost;
+                const isPrint = r.templateCode === 'print';
+                const rowBg = i % 2 === 1 ? 'bg-[#f7f7f8]' : 'bg-white';
+                return (
+                  <tr key={`${r.name}:${r.publisherName}:${i}`} className={`${rowBg} border-b border-ph-charcoal/5 last:border-0`}>
+                    <td className={`sticky left-0 z-[1] ${rowBg} py-2 pr-3 text-ph-charcoal shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]`}>
+                      {r.name}
+                    </td>
+                    <td className="py-2 pr-3 text-ph-charcoal/70">{r.publisherName}</td>
+                    <td className="py-2 pr-3 font-medium text-ph-charcoal/80">{r.brandName}</td>
+                    <td className="py-2 pr-3 text-ph-charcoal/70">{r.audienceName}</td>
+                    <td className={`${num} ${isPrint ? 'text-ph-charcoal/80' : 'text-ph-charcoal/25'}`}>
+                      {isPrint ? formatNumber(touchpoints) : '-'}
+                    </td>
+                    <td className={`${num} ${isPrint ? 'text-ph-charcoal/25' : 'text-ph-charcoal/80'}`}>
+                      {isPrint ? '-' : formatNumber(touchpoints)}
+                    </td>
+                    <td className={`${num} font-medium text-ph-charcoal`}>{formatNumber(touchpoints)}</td>
+                    <td className={`${num} ${tpTarget > 0 ? attainmentColour(pctOfTarget(touchpoints, tpTarget)) : 'text-ph-charcoal/25'}`}>
+                      {tpTarget > 0 ? formatPercent(pctOfTarget(touchpoints, tpTarget)) : '-'}
+                    </td>
+                    <td className={`${num} text-ph-charcoal/80`}>{formatNumber(engagements)}</td>
+                    <td className={`${num} ${enTarget > 0 ? attainmentColour(pctOfTarget(engagements, enTarget)) : 'text-ph-charcoal/25'}`}>
+                      {enTarget > 0 ? formatPercent(pctOfTarget(engagements, enTarget)) : '-'}
+                    </td>
+                    <td className={`${num} text-ph-charcoal/80`}>
+                      {touchpoints > 0 ? formatPercent(engagements / touchpoints, 2) : '-'}
+                    </td>
+                    <td className={`${num} text-ph-charcoal/80`}>{spend > 0 ? formatCurrency(spend) : '-'}</td>
+                    <td className={`${num} text-ph-charcoal/80`}>
+                      {touchpoints > 0 && spend > 0 ? money(spend / (touchpoints / 1000)) : '-'}
+                    </td>
+                    <td className="py-2 pl-3 pr-3 text-right tabular-nums text-ph-charcoal/80">
+                      {engagements > 0 && spend > 0 ? money(spend / engagements) : '-'}
                     </td>
                   </tr>
-                  {g.rows.map((r, i) => {
-                    const touchpoints = sumKeys(r.metrics, TOUCHPOINT_KEYS);
-                    const engagements = sumKeys(r.metrics, ENGAGEMENT_KEYS);
-                    const tpTarget = sumKeys(r.targetMetrics, TOUCHPOINT_KEYS);
-                    const enTarget = sumKeys(r.targetMetrics, ENGAGEMENT_KEYS);
-                    const spend = r.mediaCost + r.cpdInvestmentCost;
-                    const isPrint = r.templateCode === 'print';
-                    // Zebra per asset; opaque so the pinned Asset cell matches.
-                    const rowBg = i % 2 === 1 ? 'bg-[#f7f7f8]' : 'bg-white';
-                    return (
-                      <tr key={`${g.brand}:${i}`} className={`${rowBg} border-b border-ph-charcoal/5 last:border-0`}>
-                        <td className={`sticky left-0 z-[1] ${rowBg} py-2 pr-3 text-ph-charcoal shadow-[inset_-1px_0_0_rgba(69,70,70,0.12)]`}>
-                          {r.name}
-                        </td>
-                        <td className="py-2 pr-3 text-ph-charcoal/70">{r.publisherName}</td>
-                        <td className="py-2 pr-3 text-ph-charcoal/70">{r.audienceName}</td>
-                        <td className={`${num} ${isPrint ? 'text-ph-charcoal/80' : 'text-ph-charcoal/25'}`}>
-                          {isPrint ? formatNumber(touchpoints) : '-'}
-                        </td>
-                        <td className={`${num} ${isPrint ? 'text-ph-charcoal/25' : 'text-ph-charcoal/80'}`}>
-                          {isPrint ? '-' : formatNumber(touchpoints)}
-                        </td>
-                        <td className={`${num} font-medium text-ph-charcoal`}>{formatNumber(touchpoints)}</td>
-                        <td className={`${num} ${tpTarget > 0 ? attainmentColour(pctOfTarget(touchpoints, tpTarget)) : 'text-ph-charcoal/25'}`}>
-                          {tpTarget > 0 ? formatPercent(pctOfTarget(touchpoints, tpTarget)) : '-'}
-                        </td>
-                        <td className={`${num} text-ph-charcoal/80`}>{formatNumber(engagements)}</td>
-                        <td className={`${num} ${enTarget > 0 ? attainmentColour(pctOfTarget(engagements, enTarget)) : 'text-ph-charcoal/25'}`}>
-                          {enTarget > 0 ? formatPercent(pctOfTarget(engagements, enTarget)) : '-'}
-                        </td>
-                        <td className={`${num} text-ph-charcoal/80`}>
-                          {touchpoints > 0 ? formatPercent(engagements / touchpoints, 2) : '-'}
-                        </td>
-                        <td className={`${num} text-ph-charcoal/80`}>{spend > 0 ? formatCurrency(spend) : '-'}</td>
-                        <td className={`${num} text-ph-charcoal/80`}>
-                          {touchpoints > 0 && spend > 0 ? money(spend / (touchpoints / 1000)) : '-'}
-                        </td>
-                        <td className="py-2 pl-3 pr-3 text-right tabular-nums text-ph-charcoal/80">
-                          {engagements > 0 && spend > 0 ? money(spend / engagements) : '-'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </Fragment>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           <ColResizeLines cols={cols} />
