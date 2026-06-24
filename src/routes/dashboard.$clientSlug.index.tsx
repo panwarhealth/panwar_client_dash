@@ -3,8 +3,9 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, RotateCcw, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, CartesianGrid, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis,
 } from 'recharts';
+import { ChartArea } from '@/components/dashboard/ChartArea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HScroll } from '@/components/HScroll';
 import { ColResizeLines, useColumnResize } from '@/lib/columnResize';
@@ -493,9 +494,10 @@ function PerformanceSummary({
       </CardHeader>
       <CardContent>
         {showChart && (
-          <div className="mb-6 h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <div className="mb-6">
+            <ChartArea height={320}>
+              {(chartW, chartH) => (
+                <ComposedChart width={chartW} height={chartH} data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -543,7 +545,8 @@ function PerformanceSummary({
                   isAnimationActive={false}
                 />
               </ComposedChart>
-            </ResponsiveContainer>
+              )}
+            </ChartArea>
           </div>
         )}
         <HScroll>

@@ -45,11 +45,21 @@ export function useColumnResize(defaults: Record<string, number>, extraWidth = 0
   useEffect(() => {
     const el = measureRef.current?.parentElement;
     if (!el) return;
-    const update = () => setAvail(el.clientWidth);
+    let raf = 0;
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const w = el.clientWidth;
+        setAvail((prev) => (prev === w ? prev : w));
+      });
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, []);
 
   // Drag listeners live on the document so tracking survives leaving the handle.

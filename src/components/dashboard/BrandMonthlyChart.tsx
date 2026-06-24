@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import {
-  Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartArea } from './ChartArea';
 import { useClientPrimaryColor } from '@/hooks/useClientPrimaryColor';
 import {
   MONTH_LABELS, TOUCHPOINT_KEYS, ENGAGEMENT_KEYS, formatCompact, monthsBetween, sumKeys,
@@ -118,9 +119,9 @@ export function BrandMonthlyChart({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <ChartArea height={320}>
+          {(chartW, chartH) => (
+            <ComposedChart width={chartW} height={chartH} data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
               <Tooltip
                 cursor={false}
@@ -227,8 +228,8 @@ export function BrandMonthlyChart({
                 );
               })}
             </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </ChartArea>
         <div className="mt-6 flex flex-col gap-3 text-xs">
           {(['touchpoints', 'engagements'] as const).map((kind) => (
             <div key={kind} className="flex flex-wrap items-center gap-x-6 gap-y-2.5">

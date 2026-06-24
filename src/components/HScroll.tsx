@@ -34,10 +34,18 @@ export function HScroll({ children, maxHeight }: { children: ReactNode; maxHeigh
     sync();
     const el = scrollRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(sync);
+    let raf = 0;
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(sync);
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(el);
     if (el.firstElementChild) ro.observe(el.firstElementChild);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [sync]);
 
   const onThumbPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
