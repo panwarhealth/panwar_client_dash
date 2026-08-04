@@ -334,7 +334,7 @@ function EducationLinks({
   );
 }
 
-/** "Australian Journal of Pharmacy" → "AJP"; single-word names stay as-is. */
+/** Initials of a multi-word publisher name; single-word names stay as-is. */
 function publisherAbbrev(label: string): string {
   const words = label.split(' ');
   if (words.length === 1) return label;

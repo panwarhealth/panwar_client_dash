@@ -3,8 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 
 /**
  * Plain-language definitions for the metrics shown across the dashboards.
- * Static content (the same set the Reckitt workbook defines once and reuses);
- * generic across clients, so it lives in code rather than the database.
+ * Static content, generic across clients, so it lives in code rather than
+ * the database.
  */
 export const Route = createFileRoute('/dashboard/definitions')({
   component: DefinitionsView,
