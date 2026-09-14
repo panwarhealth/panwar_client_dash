@@ -117,7 +117,10 @@ function ClientOverviewPage() {
       {summary.error && <DashboardError error={summary.error} onRetry={() => summary.refetch()} />}
       {summary.data && (
         <div className="flex flex-col gap-6">
-          <SummaryBanner totals={summary.data.totals} isPlan={summary.data.isPlan} />
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-semibold uppercase tracking-wide text-ph-charcoal">YTD Overview</h2>
+            <SummaryBanner totals={summary.data.totals} isPlan={summary.data.isPlan} />
+          </div>
           {summary.data.summary && (
             <YearSummaryCard summary={summary.data.summary} isPlan={summary.data.isPlan} />
           )}

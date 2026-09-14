@@ -14,14 +14,18 @@ import {
 } from '@/lib/metrics';
 import type { DashboardTotals } from '@/api/dashboard';
 
-/** Colour band for a % of KPI attainment. */
 function bandClass(pct: number): string {
   if (pct >= 1) return 'bg-emerald-500';
   if (pct >= 0.85) return 'bg-amber-500';
   return 'bg-rose-500';
 }
 
-function AttainmentBar({ pct }: { pct: number }) {
+function signedNumber(value: number): string {
+  return `${value >= 0 ? '+' : '-'}${formatNumber(Math.abs(value))}`;
+}
+
+function AttainmentBar({ actual, target }: { actual: number; target: number }) {
+  const pct = pctOfTarget(actual, target);
   const fill = Math.max(0, Math.min(pct, 1));
   return (
     <div className="mt-2">
@@ -29,7 +33,7 @@ function AttainmentBar({ pct }: { pct: number }) {
         <div className={`h-full rounded-full ${bandClass(pct)}`} style={{ width: `${fill * 100}%` }} />
       </div>
       <span className="mt-1 block text-xs font-medium text-ph-charcoal/60">
-        {formatPercent(pct)} of KPI
+        {formatPercent(pct)} of KPI ({signedNumber(actual - target)})
       </span>
     </div>
   );
@@ -81,8 +85,6 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
   const planned = totals.plannedMediaCost;
 
   if (isPlan) {
-    // Nothing has run yet - the headline numbers are the plan itself: KPI
-    // targets and planned spend, with projected cost-per rates.
     const planSpend = planned ?? spend;
     return (
       <div className="flex flex-col gap-2">
@@ -119,14 +121,25 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <Tile label="Total Touchpoints" value={formatNumber(touchpoints)} sub={`vs ${formatNumber(touchpointsTarget)} expected`}>
-        {touchpointsTarget > 0 && <AttainmentBar pct={pctOfTarget(touchpoints, touchpointsTarget)} />}
+        {touchpointsTarget > 0 && <AttainmentBar actual={touchpoints} target={touchpointsTarget} />}
       </Tile>
 
       <Tile label="Total Engagements" value={formatNumber(engagements)} sub={`vs ${formatNumber(engagementsTarget)} expected`}>
-        {engagementsTarget > 0 && <AttainmentBar pct={pctOfTarget(engagements, engagementsTarget)} />}
+        {engagementsTarget > 0 && <AttainmentBar actual={engagements} target={engagementsTarget} />}
       </Tile>
 
-      <Tile label="Engagement Rate" value={formatPercent(engagementRate(engagements, touchpoints), 2)} sub="engagements ÷ touchpoints" />
+      <Tile
+        label="Engagement Rate"
+        value={formatPercent(engagementRate(engagements, touchpoints), 2)}
+        sub={
+          touchpointsTarget > 0
+            ? `vs ${formatPercent(engagementRate(engagementsTarget, touchpointsTarget), 2)} in plan`
+            : 'engagements ÷ touchpoints'
+        }
+      />
+
+      <Tile label="Cost per Touchpoint" value={formatCurrency(costPer(spend, touchpoints / 1000))} sub="per 1,000 touchpoints" />
+      <Tile label="Cost per Engagement" value={formatCurrency(costPer(spend, engagements))} sub="per engagement" />
 
       <Tile
         label="Spend (incl CPD)"
@@ -138,24 +151,7 @@ export function SummaryBanner({ totals, isPlan = false }: { totals: DashboardTot
               ? `of ${formatCurrency(planned)} planned`
               : undefined
         }
-      >
-        {planned != null && planned > 0 && (
-          <div className="mt-2">
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-ph-charcoal/10">
-              <div
-                className={`h-full rounded-full ${spend > planned ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                style={{ width: `${Math.min((spend / planned) * 100, 100)}%` }}
-              />
-            </div>
-            <span className="mt-1 block text-xs font-medium text-ph-charcoal/60">
-              {formatPercent(pctOfTarget(spend, planned))} of plan
-            </span>
-          </div>
-        )}
-      </Tile>
-
-      <Tile label="Cost per Touchpoint" value={formatCurrency(costPer(spend, touchpoints / 1000))} sub="per 1,000 touchpoints" />
-      <Tile label="Cost per Engagement" value={formatCurrency(costPer(spend, engagements))} sub="per engagement" />
+      />
       </div>
       <DefinitionsLink />
     </div>
