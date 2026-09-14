@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { HScroll } from '@/components/HScroll';
 import { ColResizeLines, useColumnResize } from '@/lib/columnResize';
 import type { SummaryRow } from '@/api/summary';
-import type { DashboardTotals } from '@/api/dashboard';
+import type { DashboardTotals } from '@/api/summary';
 import {
   TOUCHPOINT_KEYS,
   ENGAGEMENT_KEYS,
@@ -332,7 +332,7 @@ export function PerformanceSection({
                     tickFormatter={(v) => formatCompact(v as number)}
                   />
                   <Tooltip
-                    formatter={(v) => (v as number).toLocaleString('en-AU')}
+                    formatter={(v) => Math.round(v as number).toLocaleString('en-AU')}
                     contentStyle={{
                       borderRadius: 3,
                       border: '1px solid rgba(69, 70, 70, 0.1)',

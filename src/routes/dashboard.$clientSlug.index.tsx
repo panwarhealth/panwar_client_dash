@@ -2,14 +2,12 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SummaryBanner } from '@/components/dashboard/SummaryBanner';
-import { BrandMonthlyChart } from '@/components/dashboard/BrandMonthlyChart';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
 import { getClientBrands, getMyClients } from '@/api/clients';
 import { BrandPerformance } from '@/components/dashboard/BrandPerformance';
 import { AudiencePerformance } from '@/components/dashboard/AudiencePerformance';
-import { PublisherPerformance } from '@/components/dashboard/PublisherPerformance';
 import { DimensionPerformance } from '@/components/dashboard/DimensionPerformance';
 import { getClientSummary } from '@/api/summary';
 
@@ -25,6 +23,15 @@ export const Route = createFileRoute('/dashboard/$clientSlug/')({
   }),
   component: ClientOverviewPage,
 });
+
+function publisherAbbrev(label: string): string {
+  const words = label.split(' ');
+  if (words.length === 1) return label;
+  return words
+    .filter((w) => /^[A-Z]/.test(w))
+    .map((w) => w[0])
+    .join('');
+}
 
 function ClientOverviewPage() {
   const { clientSlug } = Route.useParams();
@@ -92,22 +99,23 @@ function ClientOverviewPage() {
             summary={summary.data}
             audiences={audiences}
           />
-          <AudiencePerformance summary={summary.data} audiences={audiences} />
-          {summary.data.showBrandMonthlyChart &&
-            !summary.data.isPlan &&
-            summary.data.monthlyByBrand.length > 0 && (
-              <BrandMonthlyChart
-                brands={summary.data.monthlyByBrand}
-                from={summary.data.period.from}
-                to={summary.data.period.to}
-              />
-            )}
-          <PublisherPerformance
+          <AudiencePerformance
             clientSlug={clientSlug}
             from={from}
             to={to}
             summary={summary.data}
             audiences={audiences}
+          />
+          <DimensionPerformance
+            clientSlug={clientSlug}
+            from={from}
+            to={to}
+            summary={summary.data}
+            dimension="byPublisher"
+            title="Performance by publisher"
+            subtitle="Touchpoints, engagements and spend (incl. CPD) by publisher."
+            dimensionLabel="Publisher"
+            abbreviate={publisherAbbrev}
           />
 
           <DimensionPerformance
@@ -115,7 +123,6 @@ function ClientOverviewPage() {
             from={from}
             to={to}
             summary={summary.data}
-            audiences={audiences}
             dimension="byCategory"
             title="Category performance"
             subtitle="Touchpoints, engagements and spend by category."
@@ -127,7 +134,6 @@ function ClientOverviewPage() {
             from={from}
             to={to}
             summary={summary.data}
-            audiences={audiences}
             dimension="byDigitalFormat"
             title="Digital format performance"
             subtitle="Touchpoints, engagements and spend by digital format."

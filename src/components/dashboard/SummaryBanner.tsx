@@ -12,7 +12,7 @@ import {
   costPer,
   pctOfTarget,
 } from '@/lib/metrics';
-import type { DashboardTotals } from '@/api/dashboard';
+import type { DashboardTotals } from '@/api/summary';
 
 function bandClass(pct: number): string {
   if (pct >= 1) return 'bg-emerald-500';

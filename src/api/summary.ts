@@ -1,31 +1,70 @@
 import { apiFetch } from './client';
-import type { DashboardPeriod, DashboardTotals } from './dashboard';
 
-/** Mirror of the API's ClientSummaryResponse (Panwar.Api.Models.DTOs). */
+export interface DashboardPeriod {
+  from: string;
+  to: string;
+  availableFrom: string | null;
+  availableTo: string | null;
+}
+
+export interface DashboardTotals {
+  placementCount: number;
+  mediaCost: number;
+  plannedMediaCost: number | null;
+  cpdInvestmentCost: number;
+  metrics: Record<string, number>;
+  targetMetrics: Record<string, number>;
+}
+
+export interface PlacementMonth {
+  year: number;
+  month: number;
+  metrics: Record<string, number>;
+  targetMetrics: Record<string, number>;
+}
+
+export interface DashboardPlacement {
+  id: string;
+  name: string;
+  objective: string;
+  templateCode: string;
+  mediaType: string;
+  publisherName: string;
+  publisherSlug: string;
+  audienceName: string;
+  audienceSlug: string;
+  osCode: string | null;
+  isBonus: boolean;
+  mediaCost: number;
+  plannedMediaCost: number | null;
+  artworkViewUrl: string | null;
+  liveMonths: number[];
+  startDate: string | null;
+  endDate: string | null;
+  subcategory: string | null;
+  sendDates: string[];
+  metricKeys: string[];
+  totals: Record<string, number>;
+  targets: Record<string, number>;
+  comments: string | null;
+  months: PlacementMonth[];
+}
+
 export interface ClientSummary {
   client: { id: string; name: string; slug: string };
   period: DashboardPeriod;
   totals: DashboardTotals;
   byBrandAudience: SummaryRow[];
   byPublisher: SummaryRow[];
-  /** Per-category rollup (Digital / Print / Education) - same shape as byPublisher. */
   byCategory: SummaryRow[];
-  /** Per-digital-format rollup (eDM Solus/Spon Con/Banners, Digital Display, Spon Con). */
   byDigitalFormat: SummaryRow[];
-  /** Brands present in the window (for the performance-card brand filter), with display colour. */
   brands: BrandRef[];
-  /** True when the window has no actuals - the dashboard shows a plan, not results. */
   isPlan: boolean;
-  /** Analyst-written summary for the window's end year; null when none exists. */
   summary: { year: number; text: string } | null;
-  /** Per-client toggle: render the monthly touchpoints-by-brand chart. */
   showBrandMonthlyChart: boolean;
-  /** Per-client toggle: render the touchpoints-vs-engagements-by-publisher chart. */
   showPublisherChart: boolean;
-  /** Monthly in-window metrics per brand; empty when disabled or planning. */
-  monthlyByBrand: BrandMonthly[];
-  /** Every placement as its own row (the workbook's FY25 Summary by Asset). */
   byAsset: AssetRow[];
+  placements: DashboardPlacement[];
 }
 
 export interface AssetRow {
@@ -35,26 +74,11 @@ export interface AssetRow {
   audienceName: string;
   publisherName: string;
   objective: string;
-  /** Metric template code: 'print' | 'digital_display' | 'edm' | 'sponsored_content' | 'education'. */
   templateCode: string;
   mediaCost: number;
   cpdInvestmentCost: number;
   metrics: Record<string, number>;
   targetMetrics: Record<string, number>;
-}
-
-export interface BrandMonthlyPoint {
-  year: number;
-  month: number;
-  metrics: Record<string, number>;
-  digitalMetrics: Record<string, number>;
-  printMetrics: Record<string, number>;
-}
-
-export interface BrandMonthly {
-  label: string;
-  brandSlug: string;
-  months: BrandMonthlyPoint[];
 }
 
 export interface BrandRef {

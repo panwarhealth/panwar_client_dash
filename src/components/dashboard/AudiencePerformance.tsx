@@ -1,30 +1,56 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PerformanceSection, perfRow, perfTotal, type PerfRow } from '@/components/dashboard/PerformanceSection';
-import type { ClientSummary } from '@/api/summary';
+import { getClientSummary, type ClientSummary } from '@/api/summary';
 import type { AudienceSummary } from '@/api/clients';
+import { BrandSelect } from '@/components/dashboard/BrandSelect';
 
 export function AudiencePerformance({
+  clientSlug,
+  from,
+  to,
   summary,
   audiences,
 }: {
+  clientSlug: string;
+  from?: string;
+  to?: string;
   summary: ClientSummary;
   audiences: AudienceSummary[];
 }) {
+  const [brand, setBrand] = useState<string | null>(null);
+  const filtered = useQuery({
+    queryKey: ['summary', clientSlug, from ?? '', to ?? '', brand ?? '', ''],
+    queryFn: () => getClientSummary(clientSlug, { from, to, brand: brand ?? undefined }),
+    enabled: !!brand,
+    staleTime: 0,
+  });
+  const data = brand && filtered.data ? filtered.data : summary;
+  const activeBrand = brand ? summary.brands.find((b) => b.slug === brand) : undefined;
+
   const rows: PerfRow[] = audiences
     .map((a) => {
-      const ar = summary.byBrandAudience.filter((r) => r.audienceSlug === a.slug);
+      const ar = data.byBrandAudience.filter((r) => r.audienceSlug === a.slug);
       return ar.length > 0 ? perfRow(a.slug, a.name, ar) : null;
     })
     .filter((r): r is PerfRow => r !== null);
-  const total = perfTotal('Grand total', summary.totals);
+  const total = perfTotal('Grand total', data.totals);
+
+  const controls = <BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />;
 
   return (
     <PerformanceSection
       title="Performance by audience"
-      subtitle="Touchpoints, engagements and spend (incl. CPD) by audience."
+      subtitle={
+        activeBrand
+          ? `${activeBrand.name} touchpoints, engagements and spend (incl. CPD) by audience.`
+          : 'Touchpoints, engagements and spend (incl. CPD) by audience.'
+      }
       dimensionLabel="Audience"
       rows={rows}
       total={total}
       showChart={!summary.isPlan}
+      controls={controls}
     />
   );
 }

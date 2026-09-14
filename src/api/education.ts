@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { DashboardPeriod } from './dashboard';
+import type { DashboardPeriod } from './summary';
 
 /** Mirror of the API's education read DTOs (Panwar.Api.Models.DTOs). */
 export interface EducationPageSummary {

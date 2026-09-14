@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { periodPresets, formatRange, parseYm, toYm, MONTH_LABELS } from '@/lib/metrics';
-import type { DashboardPeriod } from '@/api/dashboard';
+import type { DashboardPeriod } from '@/api/summary';
 
 /**
  * Date filter (month granularity). The primary control is a year dropdown

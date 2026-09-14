@@ -17,7 +17,7 @@ import {
   cpc,
   pctOfTarget,
 } from '@/lib/metrics';
-import type { DashboardPlacement } from '@/api/dashboard';
+import type { DashboardPlacement } from '@/api/summary';
 
 /** The dates/sends descriptor under a placement's name, per its date shape. */
 function whenLabel(p: DashboardPlacement): string | null {
