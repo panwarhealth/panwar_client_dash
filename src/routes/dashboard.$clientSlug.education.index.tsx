@@ -2,17 +2,12 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getEducationPages } from '@/api/education';
-import { sweepToSectionAfterNav } from '@/lib/scroll';
 
 interface PeriodSearch {
   from?: string;
   to?: string;
 }
 
-/**
- * Education landing for a client. One page → jump straight in. Multiple → show a
- * picker. None → empty state.
- */
 export const Route = createFileRoute('/dashboard/$clientSlug/education/')({
   validateSearch: (search: Record<string, unknown>): PeriodSearch => ({
     from: typeof search.from === 'string' ? search.from : undefined,
@@ -46,18 +41,7 @@ function EducationIndex() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          to="/dashboard/$clientSlug"
-          params={{ clientSlug }}
-          search={{ from, to }}
-          onClick={() => sweepToSectionAfterNav('education')}
-          className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
-        >
-          ← Overview
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-ph-charcoal">Education</h1>
-      </div>
+      <h1 className="text-2xl font-semibold text-ph-charcoal">Education Results</h1>
 
       {pages.length === 0 ? (
         <div className="rounded-lg border border-dashed border-ph-charcoal/15 p-8 text-center text-sm text-ph-charcoal/60">

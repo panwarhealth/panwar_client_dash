@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
@@ -8,7 +8,6 @@ import { EducationBarChart, EducationLegend } from '@/components/education/Educa
 import { EducationAssetTables } from '@/components/education/EducationAssetTables';
 import { getEducationPage, type EducationChart } from '@/api/education';
 import { getClientBrands } from '@/api/clients';
-import { sweepToSectionAfterNav } from '@/lib/scroll';
 
 interface PeriodSearch {
   from?: string;
@@ -62,29 +61,16 @@ function EducationPageView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        {/* Back to the client overview, sweeping to its Education section -
-            that section lists every education page, so it doubles as the picker. */}
-        <Link
-          to="/dashboard/$clientSlug"
-          params={{ clientSlug }}
-          search={{ from, to }}
-          onClick={() => sweepToSectionAfterNav('education')}
-          className="text-xs uppercase tracking-wide text-ph-charcoal/60 hover:text-client-primary"
-        >
-          ← Overview
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-ph-charcoal">
-            {page.data?.page.name ?? 'Loading…'}
-          </h1>
-          {page.data && (
-            <PeriodFilter
-              period={page.data.period}
-              onChange={(f, t) => navigate({ search: { from: f, to: t } })}
-            />
-          )}
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-ph-charcoal">
+          {page.data?.page.name ?? 'Loading…'}
+        </h1>
+        {page.data && (
+          <PeriodFilter
+            period={page.data.period}
+            onChange={(f, t) => navigate({ search: { from: f, to: t } })}
+          />
+        )}
       </div>
 
       {page.isPending && <DashboardSkeleton />}

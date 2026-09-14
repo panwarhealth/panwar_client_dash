@@ -77,12 +77,13 @@ export interface SummaryRow {
 
 export async function getClientSummary(
   clientSlug: string,
-  period?: { from?: string; to?: string; brand?: string },
+  period?: { from?: string; to?: string; brand?: string; audience?: string },
 ): Promise<ClientSummary> {
   const qs = new URLSearchParams();
   if (period?.from) qs.set('from', period.from);
   if (period?.to) qs.set('to', period.to);
   if (period?.brand) qs.set('brand', period.brand);
+  if (period?.audience) qs.set('audience', period.audience);
   const suffix = qs.toString() ? `?${qs}` : '';
   return apiFetch<ClientSummary>(`/dashboards/${encodeURIComponent(clientSlug)}/summary${suffix}`);
 }
