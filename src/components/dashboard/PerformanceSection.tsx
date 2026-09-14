@@ -166,6 +166,7 @@ export function PerformanceSection({
   subtitle,
   dimensionLabel,
   rows,
+  chartRows,
   total,
   showChart,
   abbreviate = (s) => s,
@@ -176,6 +177,7 @@ export function PerformanceSection({
   subtitle: string;
   dimensionLabel: string;
   rows: PerfRow[];
+  chartRows?: PerfRow[];
   total?: PerfRow;
   showChart: boolean;
   abbreviate?: (label: string) => string;
@@ -202,7 +204,7 @@ export function PerformanceSection({
     : rows;
 
   const colourOf = (r: PerfRow) => barColor?.(r) ?? r.color ?? DEFAULT_BAR;
-  const chartData = rows.map((r) => ({
+  const chartData = (chartRows ?? rows).map((r) => ({
     name: r.label,
     touchpoints: r.touchpoints,
     touchpointsKpi: r.touchpointsKpi,
@@ -253,7 +255,7 @@ export function PerformanceSection({
       <tr key={`${kind}:${r.key}`} className={rowCls}>
         <td className={labelCls}>
           <span className="flex items-center gap-2">
-            {kind === 'row' && r.color && (
+            {kind !== 'total' && r.color && (
               <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: r.color }} />
             )}
             {r.label}
@@ -299,7 +301,7 @@ export function PerformanceSection({
         </div>
       </CardHeader>
       <CardContent>
-        {showChart && rows.length > 0 && (
+        {showChart && (chartRows ?? rows).length > 0 && (
           <div className="mb-6">
             <ChartArea height={320}>
               {(chartW, chartH) => (

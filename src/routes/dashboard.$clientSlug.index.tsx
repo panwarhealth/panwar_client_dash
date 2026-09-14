@@ -9,6 +9,7 @@ import { getClientBrands, getMyClients } from '@/api/clients';
 import { BrandPerformance } from '@/components/dashboard/BrandPerformance';
 import { AudiencePerformance } from '@/components/dashboard/AudiencePerformance';
 import { DimensionPerformance } from '@/components/dashboard/DimensionPerformance';
+import { MediaTypePerformance } from '@/components/dashboard/MediaTypePerformance';
 import { getClientSummary } from '@/api/summary';
 
 interface PeriodSearch {
@@ -117,29 +118,7 @@ function ClientOverviewPage() {
             dimensionLabel="Publisher"
             abbreviate={publisherAbbrev}
           />
-
-          <DimensionPerformance
-            clientSlug={clientSlug}
-            from={from}
-            to={to}
-            summary={summary.data}
-            dimension="byCategory"
-            title="Category performance"
-            subtitle="Touchpoints, engagements and spend by category."
-            dimensionLabel="Category"
-          />
-
-          <DimensionPerformance
-            clientSlug={clientSlug}
-            from={from}
-            to={to}
-            summary={summary.data}
-            dimension="byDigitalFormat"
-            title="Digital format performance"
-            subtitle="Touchpoints, engagements and spend by digital format."
-            dimensionLabel="Format"
-          />
-
+          <MediaTypePerformance clientSlug={clientSlug} from={from} to={to} summary={summary.data} />
         </div>
       )}
     </div>

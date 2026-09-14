@@ -4,26 +4,19 @@ import { PerformanceSection, perfRow, perfTotal, type PerfRow } from '@/componen
 import { BrandSelect } from '@/components/dashboard/BrandSelect';
 import { getClientSummary, type ClientSummary } from '@/api/summary';
 
-export function DimensionPerformance({
+const TOTAL_BAR = '#6b7280';
+const FORMAT_BARS = ['#0e7490', '#d97706', '#7c3aed', '#16a34a', '#db2777', '#2563eb'];
+
+export function MediaTypePerformance({
   clientSlug,
   from,
   to,
   summary,
-  dimension,
-  title,
-  subtitle,
-  dimensionLabel,
-  abbreviate,
 }: {
   clientSlug: string;
   from?: string;
   to?: string;
   summary: ClientSummary;
-  dimension: 'byPublisher';
-  title: string;
-  subtitle: string;
-  dimensionLabel: string;
-  abbreviate?: (label: string) => string;
 }) {
   const [brand, setBrand] = useState<string | null>(null);
   const filtered = useQuery({
@@ -35,18 +28,30 @@ export function DimensionPerformance({
   const data = brand && filtered.data ? filtered.data : summary;
   const scope = summary.brands.find((b) => b.slug === brand)?.name;
 
-  const rows: PerfRow[] = data[dimension].map((r) => perfRow(r.label, r.label, [r]));
+  const formats: PerfRow[] = data.byDigitalFormat.map((r, i) =>
+    perfRow(r.label, r.label, [r], FORMAT_BARS[i % FORMAT_BARS.length]),
+  );
+  const rows: PerfRow[] = data.byCategory.map((r) => {
+    const row = perfRow(r.label, `Total ${r.label}`, [r], TOTAL_BAR);
+    if (r.label === 'Digital') row.children = formats;
+    return row;
+  });
+  const chartRows = rows.flatMap((r) => [r, ...(r.children ?? [])]);
   const total = perfTotal('Grand total', data.totals);
 
   return (
     <PerformanceSection
-      title={title}
-      subtitle={scope ? `${scope}: ${subtitle}` : subtitle}
-      dimensionLabel={dimensionLabel}
+      title="Performance by media type"
+      subtitle={
+        scope
+          ? `${scope}: touchpoints, engagements and spend by media type.`
+          : 'Touchpoints, engagements and spend by media type. Digital formats add up to Total Digital.'
+      }
+      dimensionLabel="Media type"
       rows={rows}
+      chartRows={chartRows}
       total={total}
       showChart={summary.showPublisherChart && !summary.isPlan}
-      abbreviate={abbreviate}
       controls={<BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />}
     />
   );
