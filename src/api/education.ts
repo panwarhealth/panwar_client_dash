@@ -1,18 +1,13 @@
 import { apiFetch } from './client';
 import type { DashboardPeriod } from './summary';
 
-/** Mirror of the API's education read DTOs (Panwar.Api.Models.DTOs). */
 export interface EducationPageSummary {
   id: string;
   name: string;
   slug: string;
   sortOrder: number;
   chartCount: number;
-  /** Series across the page's charts. */
-  moduleCount: number;
-  /** Detail-table asset rows. */
   assetCount: number;
-  /** Sum of the "Completed" status values (single-sourced from the asset tables). */
   completions: number;
 }
 
@@ -26,13 +21,12 @@ export interface EducationSeries {
   id: string;
   label: string;
   color: string | null;
-  sortOrder: number;
   points: EducationPoint[];
 }
 
 export interface EducationAnnotation {
   id: string;
-  seriesId: string;
+  brand: string;
   year: number;
   month: number;
   text: string;
@@ -43,7 +37,9 @@ export interface EducationChart {
   title: string;
   subtitle: string | null;
   sortOrder: number;
-  series: EducationSeries[];
+  groupLabels: string[];
+  brandSeries: EducationSeries[];
+  activitySeries: EducationSeries[];
   annotations: EducationAnnotation[];
 }
 
@@ -53,7 +49,6 @@ export interface EducationAssetStatus {
   total: number;
 }
 
-/** One row of the page's detail table (the workbook's per-asset education table). */
 export interface EducationAsset {
   id: string;
   groupLabel: string;
