@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { HoverCard } from '@/components/dashboard/HoverCard';
 import { ArrowDown, ArrowUp, RotateCcw } from 'lucide-react';
 import {
   Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis,
@@ -89,34 +89,20 @@ function signed(value: number): string {
 }
 
 function KpiHover({ actual, kpi, unit }: { actual: number; kpi: number; unit: string }) {
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   if (kpi <= 0) return <>{formatNumber(actual)}</>;
   const pct = pctOfTarget(actual, kpi);
-  const tone = attainmentColour(pct);
+  const tone = `font-semibold ${attainmentColour(pct)}`;
   return (
-    <span
-      className="cursor-help underline decoration-dotted decoration-ph-charcoal/30 underline-offset-4"
-      onMouseEnter={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        setPos({ x: r.right, y: r.bottom });
-      }}
-      onMouseLeave={() => setPos(null)}
+    <HoverCard
+      lines={[
+        { label: 'Actual', value: formatNumber(actual) },
+        { label: 'KPI', value: formatNumber(kpi) },
+        { label: '% of KPI', value: formatPercent(pct), className: tone },
+        { label: 'vs KPI', value: `${signed(actual - kpi)} ${unit}`, className: tone },
+      ]}
     >
       {formatNumber(actual)}
-      {pos &&
-        createPortal(
-          <span
-            className="pointer-events-none fixed z-50 block w-52 rounded-md border border-ph-charcoal/10 bg-white p-2.5 text-left text-xs font-normal normal-case tracking-normal text-ph-charcoal shadow-lg"
-            style={{ left: pos.x, top: pos.y + 4, transform: 'translateX(-100%)' }}
-          >
-            <span className="flex justify-between gap-3"><span className="text-ph-charcoal/60">Actual</span><span className="tabular-nums">{formatNumber(actual)}</span></span>
-            <span className="flex justify-between gap-3"><span className="text-ph-charcoal/60">KPI</span><span className="tabular-nums">{formatNumber(kpi)}</span></span>
-            <span className="flex justify-between gap-3"><span className="text-ph-charcoal/60">% of KPI</span><span className={`tabular-nums font-semibold ${tone}`}>{formatPercent(pct)}</span></span>
-            <span className="flex justify-between gap-3"><span className="text-ph-charcoal/60">vs KPI</span><span className={`tabular-nums font-semibold ${tone}`}>{signed(actual - kpi)} {unit}</span></span>
-          </span>,
-          document.body,
-        )}
-    </span>
+    </HoverCard>
   );
 }
 

@@ -3,6 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { PlacementCards } from '@/components/dashboard/PlacementCards';
 import { SummaryBanner } from '@/components/dashboard/SummaryBanner';
 import { BrandMonthlyPerformance } from '@/components/dashboard/BrandMonthlyPerformance';
+import { AudiencePerformance } from '@/components/dashboard/AudiencePerformance';
+import { DimensionPerformance } from '@/components/dashboard/DimensionPerformance';
+import { MediaTypePerformance } from '@/components/dashboard/MediaTypePerformance';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
@@ -21,6 +24,15 @@ export const Route = createFileRoute('/dashboard/$clientSlug/$brandSlug/')({
   }),
   component: BrandPage,
 });
+
+function publisherAbbrev(label: string): string {
+  const words = label.split(' ');
+  if (words.length === 1) return label;
+  return words
+    .filter((w) => /^[A-Z]/.test(w))
+    .map((w) => w[0])
+    .join('');
+}
 
 function BrandPage() {
   const { clientSlug, brandSlug } = Route.useParams();
@@ -74,16 +86,40 @@ function BrandPage() {
               color={brand?.color}
             />
           )}
-          {audiences.map((a) => {
-            const cards = summary.data.placements.filter((p) => p.audienceSlug === a.slug);
-            if (cards.length === 0) return null;
-            return (
-              <section key={a.slug} className="flex flex-col gap-3">
-                <h2 className="text-lg font-semibold text-ph-charcoal">{a.name}</h2>
-                <PlacementCards placements={cards} isPlan={summary.data.isPlan} />
-              </section>
-            );
-          })}
+          <AudiencePerformance
+            clientSlug={clientSlug}
+            from={from}
+            to={to}
+            summary={summary.data}
+            audiences={audiences}
+            hideBrandFilter
+          />
+          <DimensionPerformance
+            clientSlug={clientSlug}
+            from={from}
+            to={to}
+            summary={summary.data}
+            dimension="byPublisher"
+            title="Performance by publisher"
+            subtitle="Touchpoints, engagements and spend (incl. CPD) by publisher."
+            dimensionLabel="Publisher"
+            abbreviate={publisherAbbrev}
+            hideBrandFilter
+          />
+          <MediaTypePerformance clientSlug={clientSlug} from={from} to={to} summary={summary.data} hideBrandFilter />
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold uppercase tracking-wide text-ph-charcoal">Performance by asset</h2>
+            {audiences.map((a) => {
+              const cards = summary.data.placements.filter((p) => p.audienceSlug === a.slug);
+              if (cards.length === 0) return null;
+              return (
+                <section key={a.slug} className="flex flex-col gap-3">
+                  <h3 className="text-base font-semibold text-ph-charcoal">{a.name}</h3>
+                  <PlacementCards placements={cards} isPlan={summary.data.isPlan} />
+                </section>
+              );
+            })}
+          </section>
         </div>
       )}
     </div>

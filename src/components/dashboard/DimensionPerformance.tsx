@@ -9,6 +9,7 @@ export function DimensionPerformance({
   from,
   to,
   summary,
+  hideBrandFilter = false,
   dimension,
   title,
   subtitle,
@@ -19,6 +20,7 @@ export function DimensionPerformance({
   from?: string;
   to?: string;
   summary: ClientSummary;
+  hideBrandFilter?: boolean;
   dimension: 'byPublisher';
   title: string;
   subtitle: string;
@@ -47,7 +49,7 @@ export function DimensionPerformance({
       total={total}
       showChart={summary.showPublisherChart && !summary.isPlan}
       abbreviate={abbreviate}
-      controls={<BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />}
+      controls={hideBrandFilter ? undefined : <BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />}
     />
   );
 }

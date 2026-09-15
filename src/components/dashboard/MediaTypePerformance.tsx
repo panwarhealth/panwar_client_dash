@@ -12,11 +12,13 @@ export function MediaTypePerformance({
   from,
   to,
   summary,
+  hideBrandFilter = false,
 }: {
   clientSlug: string;
   from?: string;
   to?: string;
   summary: ClientSummary;
+  hideBrandFilter?: boolean;
 }) {
   const [brand, setBrand] = useState<string | null>(null);
   const filtered = useQuery({
@@ -52,7 +54,7 @@ export function MediaTypePerformance({
       chartRows={chartRows}
       total={total}
       showChart={summary.showPublisherChart && !summary.isPlan}
-      controls={<BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />}
+      controls={hideBrandFilter ? undefined : <BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />}
     />
   );
 }

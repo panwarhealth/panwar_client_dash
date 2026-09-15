@@ -72,9 +72,17 @@ export interface AssetRow {
   brandName: string;
   brandSlug: string;
   audienceName: string;
+  audienceSlug: string;
   publisherName: string;
+  publisherSlug: string;
   objective: string;
   templateCode: string;
+  mediaType: string;
+  osCode: string | null;
+  liveMonths: number[];
+  startDate: string | null;
+  endDate: string | null;
+  sendDates: string[];
   mediaCost: number;
   cpdInvestmentCost: number;
   metrics: Record<string, number>;

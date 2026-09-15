@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Newspaper, Mail, MonitorSmartphone, FileText, GraduationCap, ImageOff, Search, RotateCcw, X, ExternalLink } from 'lucide-react';
+import { Bar, ComposedChart, Line, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartArea } from '@/components/dashboard/ChartArea';
+import { HoverCard } from '@/components/dashboard/HoverCard';
 import {
+  TOUCHPOINT_KEYS,
+  ENGAGEMENT_KEYS,
+  sumKeys,
+  formatCompact,
   formatCurrency,
   formatNumber,
   formatPercent,
@@ -19,8 +26,12 @@ import {
 } from '@/lib/metrics';
 import type { DashboardPlacement } from '@/api/summary';
 
-/** The dates/sends descriptor under a placement's name, per its date shape. */
-function whenLabel(p: DashboardPlacement): string | null {
+export function whenLabel(p: {
+  sendDates: string[];
+  startDate: string | null;
+  endDate: string | null;
+  liveMonths: number[];
+}): string | null {
   if (p.sendDates.length > 1) {
     return `${p.sendDates.length} sends: ${p.sendDates.map(formatSendDate).join(', ')}`;
   }
@@ -159,16 +170,147 @@ function MetricRow({
     );
   }
   const pct = target ? pctOfTarget(actual, target) : null;
+  const tone = pct != null ? `font-semibold ${attainmentColour(pct)}` : '';
+  const inner = (
+    <span className="flex items-baseline gap-2 tabular-nums">
+      <span className="font-medium text-ph-charcoal">{formatNumber(actual)}</span>
+      {target ? <span className="text-xs text-ph-charcoal/40">/ {formatNumber(target)}</span> : null}
+      {pct != null && <span className={`text-xs ${tone}`}>{formatPercent(pct)}</span>}
+    </span>
+  );
   return (
     <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
       <span className="text-ph-charcoal/60">{label}</span>
-      <span className="flex items-baseline gap-2 tabular-nums">
-        <span className="font-medium text-ph-charcoal">{formatNumber(actual)}</span>
-        {target ? <span className="text-xs text-ph-charcoal/40">/ {formatNumber(target)}</span> : null}
-        {pct != null && (
-          <span className={`text-xs font-semibold ${attainmentColour(pct)}`}>{formatPercent(pct)}</span>
+      {target && pct != null ? (
+        <HoverCard
+          title={label}
+          lines={[
+            { label: 'Actual', value: formatNumber(actual) },
+            { label: 'KPI', value: formatNumber(target) },
+            { label: '% of KPI', value: formatPercent(pct), className: tone },
+            { label: 'vs KPI', value: `${actual - target >= 0 ? '+' : '-'}${formatNumber(Math.abs(actual - target))}`, className: tone },
+          ]}
+        >
+          {inner}
+        </HoverCard>
+      ) : (
+        inner
+      )}
+    </div>
+  );
+}
+
+function EngagementRateRow({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }) {
+  const tp = sumKeys(p.totals, TOUCHPOINT_KEYS);
+  const en = sumKeys(p.totals, ENGAGEMENT_KEYS);
+  const tpKpi = sumKeys(p.targets, TOUCHPOINT_KEYS);
+  const enKpi = sumKeys(p.targets, ENGAGEMENT_KEYS);
+  const kpiRate = tpKpi > 0 && enKpi > 0 ? enKpi / tpKpi : null;
+  if (isPlan) {
+    if (kpiRate === null) return null;
+    return (
+      <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+        <span className="text-ph-charcoal/60">Engagement rate</span>
+        <span className="flex items-baseline gap-2 tabular-nums">
+          <span className="font-medium text-ph-charcoal">{formatPercent(kpiRate, 2)}</span>
+          <span className="text-xs text-ph-charcoal/40">target</span>
+        </span>
+      </div>
+    );
+  }
+  if (tp <= 0 || (en <= 0 && kpiRate === null)) return null;
+  const rate = en / tp;
+  const pct = kpiRate ? pctOfTarget(rate, kpiRate) : null;
+  const tone = pct != null ? `font-semibold ${attainmentColour(pct)}` : '';
+  const inner = (
+    <span className="flex items-baseline gap-2 tabular-nums">
+      <span className="font-medium text-ph-charcoal">{formatPercent(rate, 2)}</span>
+      {kpiRate !== null && <span className="text-xs text-ph-charcoal/40">/ {formatPercent(kpiRate, 2)}</span>}
+      {pct != null && <span className={`text-xs ${tone}`}>{formatPercent(pct)}</span>}
+    </span>
+  );
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+      <span className="text-ph-charcoal/60">Engagement rate</span>
+      {kpiRate !== null && pct != null ? (
+        <HoverCard
+          title="Engagement rate"
+          lines={[
+            { label: 'Engagements', value: formatNumber(en) },
+            { label: 'Touchpoints', value: formatNumber(tp) },
+            { label: 'Actual rate', value: formatPercent(rate, 2) },
+            { label: 'KPI rate', value: formatPercent(kpiRate, 2) },
+            { label: '% of KPI', value: formatPercent(pct), className: tone },
+          ]}
+        >
+          {inner}
+        </HoverCard>
+      ) : (
+        inner
+      )}
+    </div>
+  );
+}
+
+const MINI_BAR = '#6b7280';
+const MINI_LINE = '#a21caf';
+
+function MiniChart({ p }: { p: DashboardPlacement }) {
+  if (p.months.length === 0) return null;
+  const hasEngagements = p.months.some(
+    (m) => sumKeys(m.metrics, ENGAGEMENT_KEYS) > 0 || sumKeys(m.targetMetrics, ENGAGEMENT_KEYS) > 0,
+  );
+  const multiYear = new Set(p.months.map((m) => m.year)).size > 1;
+  const data = p.months.map((m) => ({
+    month: multiYear ? `${MONTH_LABELS[m.month - 1]} '${String(m.year).slice(2)}` : MONTH_LABELS[m.month - 1],
+    touchpoints: sumKeys(m.metrics, TOUCHPOINT_KEYS),
+    touchpointsKpi: sumKeys(m.targetMetrics, TOUCHPOINT_KEYS),
+    engagements: sumKeys(m.metrics, ENGAGEMENT_KEYS),
+    engagementsKpi: sumKeys(m.targetMetrics, ENGAGEMENT_KEYS),
+  }));
+  return (
+    <div className="border-t border-ph-charcoal/10 pt-2">
+      <div className="mb-1 flex items-center justify-between text-[11px] uppercase tracking-wide text-ph-charcoal/60">
+        <span>Monthly vs KPI</span>
+        <span className="flex items-center gap-3 normal-case tracking-normal">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: MINI_BAR }} />
+            <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: MINI_BAR, opacity: 0.4 }} />
+            Touchpoints
+          </span>
+          {hasEngagements && (
+            <span className="flex items-center gap-1" style={{ color: MINI_LINE }}>
+              <svg width="18" height="6" aria-hidden="true">
+                <line x1="0" y1="3" x2="18" y2="3" stroke={MINI_LINE} strokeWidth="2" />
+              </svg>
+              Engagements
+            </span>
+          )}
+        </span>
+      </div>
+      <ChartArea height={130}>
+        {(w, h) => (
+          <ComposedChart width={w} height={h} data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }} barGap={1}>
+            <XAxis dataKey="month" stroke="#454646" fontSize={10} tickLine={false} axisLine={false} interval={0} />
+            <YAxis yAxisId="left" stroke="#454646" fontSize={10} tickLine={false} axisLine={false} width={44} tickFormatter={(v) => formatCompact(v as number)} />
+            {hasEngagements && (
+              <YAxis yAxisId="right" orientation="right" stroke="#454646" fontSize={10} tickLine={false} axisLine={false} width={36} tickFormatter={(v) => formatCompact(v as number)} />
+            )}
+            <Tooltip
+              formatter={(v) => Math.round(v as number).toLocaleString('en-AU')}
+              contentStyle={{ borderRadius: 3, border: '1px solid rgba(69, 70, 70, 0.1)', fontSize: 11 }}
+            />
+            <Bar yAxisId="left" dataKey="touchpoints" name="Touchpoints" fill={MINI_BAR} maxBarSize={14} isAnimationActive={false} />
+            <Bar yAxisId="left" dataKey="touchpointsKpi" name="Touchpoints KPI" fill={MINI_BAR} fillOpacity={0.4} maxBarSize={14} isAnimationActive={false} />
+            {hasEngagements && (
+              <Line yAxisId="right" type="linear" dataKey="engagements" name="Engagements" stroke={MINI_LINE} strokeWidth={1.5} dot={{ r: 2 }} isAnimationActive={false} />
+            )}
+            {hasEngagements && (
+              <Line yAxisId="right" type="linear" dataKey="engagementsKpi" name="Engagements KPI" stroke={MINI_LINE} strokeWidth={1.5} strokeDasharray="4 3" strokeOpacity={0.55} dot={false} isAnimationActive={false} />
+            )}
+          </ComposedChart>
         )}
-      </span>
+      </ChartArea>
     </div>
   );
 }
@@ -195,7 +337,7 @@ function PlacementFindings({ text }: { text: string }) {
 function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }) {
   const impressions = p.totals['impressions'] ?? 0;
   const clicks = p.totals['clicks'] ?? 0;
-  const metricKeys = p.metricKeys.filter((k) => k in p.totals || k in p.targets);
+  const metricKeys = p.metricKeys.filter((k) => k !== 'media_cost' && (k in p.totals || k in p.targets));
 
   return (
     <Card>
@@ -214,6 +356,9 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
             {p.subcategory && <> · {formatSubcategory(p.subcategory)}</>}
             {whenLabel(p) && <> · {whenLabel(p)}</>}
           </p>
+          <p className="mt-0.5 text-xs text-ph-charcoal/50">
+            OneSpot code: <span className="font-mono text-ph-charcoal/70">{p.osCode ?? 'N/A'}</span>
+          </p>
         </div>
 
         {metricKeys.length > 0 && (
@@ -227,6 +372,7 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
                 isPlan={isPlan}
               />
             ))}
+            <EngagementRateRow p={p} isPlan={isPlan} />
           </div>
         )}
 
@@ -239,6 +385,8 @@ function PlacementCard({ p, isPlan }: { p: DashboardPlacement; isPlan: boolean }
           {impressions > 0 && <Chip label="CPM" value={formatCurrency(cpm(p.mediaCost, impressions))} />}
           {clicks > 0 && <Chip label="CPC" value={formatCurrency(cpc(p.mediaCost, clicks))} />}
         </div>
+
+        {!isPlan && <MiniChart p={p} />}
 
         {p.comments && <PlacementFindings text={p.comments} />}
       </CardContent>
@@ -253,6 +401,7 @@ function placementHaystack(p: DashboardPlacement): string {
     p.publisherName,
     formatTemplateCode(p.templateCode),
     p.subcategory ? formatSubcategory(p.subcategory) : '',
+    p.osCode ?? '',
     p.comments ?? '',
   ]
     .join(' ')

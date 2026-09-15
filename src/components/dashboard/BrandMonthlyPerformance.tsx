@@ -158,8 +158,9 @@ export function BrandMonthlyPerformance({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-6 lg:grid-cols-[1fr_200px]">
-          <ChartArea height={340}>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_200px]">
+          <div className="min-w-0">
+            <ChartArea height={340}>
             {(w, h) => (
               <ComposedChart width={w} height={h} data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={2}>
                 <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
@@ -177,7 +178,8 @@ export function BrandMonthlyPerformance({
                 <Line yAxisId="right" type="linear" dataKey="engagementsKpi" name="Engagements KPI" stroke={ENGAGEMENT_LINE} strokeWidth={2} strokeDasharray="6 4" strokeOpacity={0.55} dot={false} isAnimationActive={false} />
               </ComposedChart>
             )}
-          </ChartArea>
+            </ChartArea>
+          </div>
           <FacetFilter groups={groups} selection={sel} onChange={setSelection} isDisabled={isDisabled} />
         </div>
       </CardContent>

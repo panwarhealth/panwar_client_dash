@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { Link, Outlet, useParams } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Outlet, useMatchRoute, useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut } from 'lucide-react';
+import { ArrowUp, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth, useLogout } from '@/hooks/useAuth';
 import { getClientBrands } from '@/api/clients';
@@ -13,6 +13,28 @@ import { consumeDeeplink } from '@/lib/deeplink';
  * route: if we're inside a client (/dashboard/{clientSlug}/...) it shows that
  * client's logo and name; on the client picker it shows PH branding.
  */
+function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      title="Back to top"
+      aria-label="Back to top"
+      className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-ph-charcoal/15 bg-white text-ph-charcoal/70 shadow-lg transition-colors hover:border-client-primary hover:text-client-primary"
+    >
+      <ArrowUp className="h-5 w-5" />
+    </button>
+  );
+}
+
 export function DashboardShell() {
   const { user } = useAuth();
   const logout = useLogout();
@@ -42,6 +64,8 @@ export function DashboardShell() {
   });
 
   const client = clientQuery.data?.client;
+  const matchRoute = useMatchRoute();
+  const wide = !!matchRoute({ to: '/dashboard/$clientSlug/assets', fuzzy: true });
 
   return (
     <div className="flex min-h-screen flex-col bg-ph-charcoal/[0.02]">
@@ -82,9 +106,10 @@ export function DashboardShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
+      <main className={`mx-auto w-full flex-1 px-6 py-8 ${wide ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
         <Outlet />
       </main>
+      <ScrollToTop />
 
       <footer className="border-t border-ph-charcoal/10 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 text-xs text-ph-charcoal/50">

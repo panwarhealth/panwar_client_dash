@@ -26,11 +26,13 @@ export function FacetFilter({
   selection,
   onChange,
   isDisabled,
+  layout = 'column',
 }: {
   groups: FacetGroup[];
   selection: FacetSelection;
   onChange: (next: FacetSelection) => void;
   isDisabled?: (groupKey: string, value: string) => boolean;
+  layout?: 'column' | 'row';
 }) {
   const toggle = (groupKey: string, value: string) => {
     const next: FacetSelection = { ...selection, [groupKey]: new Set(selection[groupKey]) };
@@ -40,7 +42,7 @@ export function FacetFilter({
   };
 
   return (
-    <div className="flex flex-col gap-4 text-sm">
+    <div className={`flex text-sm ${layout === 'row' ? 'flex-col gap-3' : 'flex-col gap-4'}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-ph-charcoal/60">Filter</span>
         {!isSelectionEmpty(selection) && (
@@ -55,9 +57,11 @@ export function FacetFilter({
           </button>
         )}
       </div>
+      <div className={layout === 'row' ? 'grid grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-4' : 'contents'}>
       {groups.map((g) => (
         <fieldset key={g.key} className="flex flex-col gap-1">
           <legend className="mb-1 text-xs font-semibold text-ph-charcoal">{g.label}</legend>
+          <div className="contents">
           {g.options.map((o) => {
             const checked = selection[g.key]?.has(o.value) ?? false;
             const disabled = !checked && (isDisabled?.(g.key, o.value) ?? false);
@@ -77,8 +81,10 @@ export function FacetFilter({
               </label>
             );
           })}
+          </div>
         </fieldset>
       ))}
+      </div>
     </div>
   );
 }

@@ -10,12 +10,14 @@ export function AudiencePerformance({
   from,
   to,
   summary,
+  hideBrandFilter = false,
   audiences,
 }: {
   clientSlug: string;
   from?: string;
   to?: string;
   summary: ClientSummary;
+  hideBrandFilter?: boolean;
   audiences: AudienceSummary[];
 }) {
   const [brand, setBrand] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export function AudiencePerformance({
     .filter((r): r is PerfRow => r !== null);
   const total = perfTotal('Grand total', data.totals);
 
-  const controls = <BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />;
+  const controls = hideBrandFilter ? undefined : <BrandSelect brands={summary.brands} value={brand} onChange={setBrand} />;
 
   return (
     <PerformanceSection

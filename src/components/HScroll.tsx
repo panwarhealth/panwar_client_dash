@@ -1,34 +1,30 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
-/**
- * Horizontal scroll container with a hand-rolled, always-visible scrollbar.
- * Native bars on Windows are overlay-style and fade away unless hovered
- * (and Firefox ignores ::-webkit-scrollbar styling entirely), so we hide the
- * native bar and draw our own track + draggable thumb synced to scrollLeft.
- *
- * Pass `maxHeight` to cap the body and scroll vertically inside it - that keeps
- * the horizontal bar (drawn just below) on screen for tall tables instead of
- * forcing a scroll to the page bottom. Use with a `sticky top-0` thead.
- */
+interface Thumb {
+  start: number;
+  size: number;
+}
+
+function thumbFor(scroll: number, client: number, offset: number): Thumb | null {
+  const overflow = scroll - client;
+  if (overflow <= 1) return null;
+  const size = Math.max(48, (client / scroll) * client);
+  const start = (offset / overflow) * (client - size);
+  return { start, size };
+}
+
 export function HScroll({ children, maxHeight }: { children: ReactNode; maxHeight?: number | string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ pointerX: number; scrollLeft: number } | null>(null);
-  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
+  const drag = useRef<{ axis: 'x' | 'y'; pointer: number; offset: number } | null>(null);
+  const [hThumb, setHThumb] = useState<Thumb | null>(null);
+  const [vThumb, setVThumb] = useState<Thumb | null>(null);
 
   const sync = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const overflow = el.scrollWidth - el.clientWidth;
-    if (overflow <= 1) {
-      setThumb(null);
-      return;
-    }
-    // The track is full-width below the scroll container, so its width
-    // equals the container's clientWidth.
-    const width = Math.max(48, (el.clientWidth / el.scrollWidth) * el.clientWidth);
-    const left = (el.scrollLeft / overflow) * (el.clientWidth - width);
-    setThumb({ left, width });
-  }, []);
+    setHThumb(thumbFor(el.scrollWidth, el.clientWidth, el.scrollLeft));
+    setVThumb(maxHeight ? thumbFor(el.scrollHeight, el.clientHeight, el.scrollTop) : null);
+  }, [maxHeight]);
 
   useEffect(() => {
     sync();
@@ -48,58 +44,90 @@ export function HScroll({ children, maxHeight }: { children: ReactNode; maxHeigh
     };
   }, [sync]);
 
-  const onThumbPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const startDrag = (axis: 'x' | 'y') => (e: React.PointerEvent<HTMLDivElement>) => {
     const el = scrollRef.current;
     if (!el) return;
-    drag.current = { pointerX: e.clientX, scrollLeft: el.scrollLeft };
+    drag.current = {
+      axis,
+      pointer: axis === 'x' ? e.clientX : e.clientY,
+      offset: axis === 'x' ? el.scrollLeft : el.scrollTop,
+    };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
-  const onThumbPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const moveDrag = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = scrollRef.current;
     const d = drag.current;
-    if (!el || !d || !thumb) return;
-    const range = el.clientWidth - thumb.width;
-    if (range <= 0) return;
-    const overflow = el.scrollWidth - el.clientWidth;
-    el.scrollLeft = d.scrollLeft + ((e.clientX - d.pointerX) / range) * overflow;
+    if (!el || !d) return;
+    if (d.axis === 'x') {
+      if (!hThumb) return;
+      const range = el.clientWidth - hThumb.size;
+      if (range <= 0) return;
+      el.scrollLeft = d.offset + ((e.clientX - d.pointer) / range) * (el.scrollWidth - el.clientWidth);
+    } else {
+      if (!vThumb) return;
+      const range = el.clientHeight - vThumb.size;
+      if (range <= 0) return;
+      el.scrollTop = d.offset + ((e.clientY - d.pointer) / range) * (el.scrollHeight - el.clientHeight);
+    }
   };
-  const onThumbPointerUp = () => {
+  const endDrag = () => {
     drag.current = null;
   };
 
-  // Click on the empty track jumps the thumb there.
-  const onTrackPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return; // thumb drags handle themselves
+  const trackJump = (axis: 'x' | 'y') => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
     const el = scrollRef.current;
-    if (!el || !thumb) return;
+    const t = axis === 'x' ? hThumb : vThumb;
+    if (!el || !t) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const range = el.clientWidth - thumb.width;
-    if (range <= 0) return;
-    const x = e.clientX - rect.left - thumb.width / 2;
-    el.scrollLeft = (x / range) * (el.scrollWidth - el.clientWidth);
+    if (axis === 'x') {
+      const range = el.clientWidth - t.size;
+      if (range <= 0) return;
+      el.scrollLeft = ((e.clientX - rect.left - t.size / 2) / range) * (el.scrollWidth - el.clientWidth);
+    } else {
+      const range = el.clientHeight - t.size;
+      if (range <= 0) return;
+      el.scrollTop = ((e.clientY - rect.top - t.size / 2) / range) * (el.scrollHeight - el.clientHeight);
+    }
   };
 
+  const thumbCls = 'absolute cursor-grab touch-none rounded-full bg-ph-charcoal/30 hover:bg-ph-charcoal/45 active:cursor-grabbing';
+
   return (
-    <div>
-      <div
-        ref={scrollRef}
-        onScroll={sync}
-        className={`hscroll overflow-x-auto${maxHeight ? ' overflow-y-auto' : ''}`}
-        style={maxHeight ? { maxHeight } : undefined}
-      >
-        {children}
-      </div>
-      {thumb && (
+    <div className="flex gap-2.5">
+      <div className="min-w-0 flex-1">
         <div
-          className="relative mt-2.5 h-1.5 cursor-pointer rounded-full bg-ph-charcoal/10"
-          onPointerDown={onTrackPointerDown}
+          ref={scrollRef}
+          onScroll={sync}
+          className={`hscroll overflow-x-auto${maxHeight ? ' overflow-y-auto' : ''}`}
+          style={maxHeight ? { maxHeight } : undefined}
+        >
+          {children}
+        </div>
+        {hThumb && (
+          <div className="relative mt-2.5 h-1.5 cursor-pointer rounded-full bg-ph-charcoal/10" onPointerDown={trackJump('x')}>
+            <div
+              className={`${thumbCls} top-0 h-1.5`}
+              style={{ left: hThumb.start, width: hThumb.size }}
+              onPointerDown={startDrag('x')}
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+            />
+          </div>
+        )}
+      </div>
+      {vThumb && (
+        <div
+          className="relative w-1.5 shrink-0 cursor-pointer rounded-full bg-ph-charcoal/10"
+          style={{ height: scrollRef.current?.clientHeight }}
+          onPointerDown={trackJump('y')}
         >
           <div
-            className="absolute top-0 h-1.5 cursor-grab touch-none rounded-full bg-ph-charcoal/30 hover:bg-ph-charcoal/45 active:cursor-grabbing"
-            style={{ left: thumb.left, width: thumb.width }}
-            onPointerDown={onThumbPointerDown}
-            onPointerMove={onThumbPointerMove}
-            onPointerUp={onThumbPointerUp}
+            className={`${thumbCls} left-0 w-1.5`}
+            style={{ top: vThumb.start, height: vThumb.size }}
+            onPointerDown={startDrag('y')}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
           />
         </div>
       )}
