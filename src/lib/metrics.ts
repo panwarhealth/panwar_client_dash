@@ -152,3 +152,19 @@ export function periodPresets(availableFrom: string, availableTo: string): Perio
   }
   return presets;
 }
+
+export function whenLabel(p: {
+  sendDates: string[];
+  startDate: string | null;
+  endDate: string | null;
+  liveMonths: number[];
+}): string | null {
+  if (p.sendDates.length > 1) {
+    return `${p.sendDates.length} sends: ${p.sendDates.map(formatSendDate).join(', ')}`;
+  }
+  if (p.sendDates.length === 1) return formatSendDate(p.sendDates[0]);
+  if (p.startDate && p.endDate) return `${formatMonthYear(p.startDate)} - ${formatMonthYear(p.endDate)}`;
+  if (p.startDate) return formatSendDate(p.startDate);
+  if (p.liveMonths.length > 0) return p.liveMonths.map((m) => MONTH_LABELS[m - 1]).join(', ');
+  return null;
+}

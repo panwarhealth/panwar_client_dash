@@ -4,19 +4,19 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, ChevronDown, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HScroll } from '@/components/HScroll';
-import { ColResizeLines, useColumnResize } from '@/lib/columnResize';
+import { ColResizeLines } from '@/components/ColResizeLines';
+import { useColumnResize } from '@/lib/columnResize';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { DashboardError } from '@/components/dashboard/DashboardError';
 import { HoverCard } from '@/components/dashboard/HoverCard';
+import { FacetFilter } from '@/components/dashboard/FacetFilter';
 import {
-  FacetFilter,
   emptySelection,
   isSelectionEmpty,
   type FacetGroup,
   type FacetSelection,
-} from '@/components/dashboard/FacetFilter';
-import { whenLabel } from '@/components/dashboard/PlacementCards';
+} from '@/lib/facets';
 import { getClientSummary, type AssetRow } from '@/api/summary';
 import { getClientBrands } from '@/api/clients';
 import {
@@ -27,6 +27,7 @@ import {
   formatNumber,
   formatPercent,
   pctOfTarget,
+  whenLabel,
 } from '@/lib/metrics';
 
 interface PeriodSearch {

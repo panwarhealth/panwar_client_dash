@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EducationBarChart, PALETTE, type ChartSeries } from '@/components/education/EducationBarChart';
+import { EducationBarChart, type ChartSeries } from '@/components/education/EducationBarChart';
+import { PALETTE } from '@/components/education/palette';
 import { cn } from '@/lib/utils';
 import type { EducationChart } from '@/api/education';
 

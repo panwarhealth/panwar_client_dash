@@ -4,13 +4,13 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartArea } from '@/components/dashboard/ChartArea';
+import { FacetFilter } from '@/components/dashboard/FacetFilter';
 import {
-  FacetFilter,
   emptySelection,
   isSelectionEmpty,
   type FacetGroup,
   type FacetSelection,
-} from '@/components/dashboard/FacetFilter';
+} from '@/lib/facets';
 import { useClientPrimaryColor } from '@/hooks/useClientPrimaryColor';
 import type { DashboardPlacement } from '@/api/summary';
 import {
@@ -113,7 +113,10 @@ export function BrandMonthlyPerformance({
   }, [placements]);
 
   const [selection, setSelection] = useState<FacetSelection>(() => emptySelection(groups));
-  const sel: FacetSelection = { ...emptySelection(groups), ...selection };
+  const sel: FacetSelection = useMemo(
+    () => ({ ...emptySelection(groups), ...selection }),
+    [groups, selection],
+  );
 
   const filtered = useMemo(() => placements.filter((p) => matches(p, sel)), [placements, sel]);
 

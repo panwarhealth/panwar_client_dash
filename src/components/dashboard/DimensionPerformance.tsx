@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { PerformanceSection, perfRow, perfTotal, type PerfRow } from '@/components/dashboard/PerformanceSection';
+import { PerformanceSection } from '@/components/dashboard/PerformanceSection';
+import { perfRow, perfTotal, type PerfRow } from '@/lib/performance';
 import { BrandSelect } from '@/components/dashboard/BrandSelect';
 import { getClientSummary, type ClientSummary } from '@/api/summary';
 
